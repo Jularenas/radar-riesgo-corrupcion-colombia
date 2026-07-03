@@ -9,6 +9,7 @@ dependencies = [
     "pyyaml",
     "python-dotenv",
     "tenacity",
+    "openpyxl",
 ]
 
 [project.optional-dependencies]
@@ -25,7 +26,7 @@ build-backend = "hatchling.build"
 packages = ["src/pipeline"]
 
 [tool.ruff]
-line-length = 100
+line-length = 140
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I"]

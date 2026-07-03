@@ -1,0 +1,9 @@
+window_id,tipo,inicio,fin,descripcion,fuente
+VE2018P1,presidencial,2017-12-11,2018-05-27,Ventana electoral presidencial 2018 primera vuelta (4 meses previos al 27-may-2018),Ley 996/2005 art. 38
+VE2018P2,presidencial,2018-05-28,2018-06-17,Periodo entre primera y segunda vuelta presidencial 2018,Ley 996/2005 art. 38
+VE2019T,territorial,2019-06-27,2019-10-27,Ventana electoral territorial 2019 (convenios interadministrativos junio-octubre 2019),Ley 996/2005 art. 38 — territorials
+VE2022P1,presidencial,2022-01-29,2022-05-29,Ventana electoral presidencial 2022 primera vuelta (4 meses previos al 29-may-2022); incluida pese a Ley 2159/2021 por C-153/2022,Ley 996/2005; C-153/2022 CC
+VE2022P2,presidencial,2022-05-30,2022-06-19,Periodo entre primera y segunda vuelta presidencial 2022,Ley 996/2005; C-153/2022 CC
+VE2023T,territorial,2023-06-29,2023-10-29,Ventana electoral territorial 2023 (convenios interadministrativos junio-octubre 2023),Ley 996/2005 art. 38 — territorials
+VE2026P1,presidencial,2026-01-25,2026-05-25,Ventana electoral presidencial 2026 primera vuelta estimada (4 meses previos al 25-may-2026),Ley 996/2005 art. 38
+VE2026P2,presidencial,2026-05-26,2026-06-14,Periodo estimado entre primera y segunda vuelta presidencial 2026,Ley 996/2005 art. 38

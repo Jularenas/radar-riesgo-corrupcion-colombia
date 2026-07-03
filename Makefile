@@ -26,7 +26,13 @@ pull-full:
 	cd pipeline && uv run python -m pipeline.extract.pull --full
 
 marts:
-	@echo "TODO (M2)"
+	@echo "Building DuckDB marts (mode=$(MODE))"
+	@if [ "$(MODE)" = "full" ]; then \
+		cd pipeline && uv run python -m pipeline.clean.build --full; \
+	else \
+		cd pipeline && uv run python -m pipeline.clean.build --sample; \
+	fi
+	cd pipeline && uv run python -m pipeline.clean.profile
 
 flags:
 	@echo "TODO (M3)"

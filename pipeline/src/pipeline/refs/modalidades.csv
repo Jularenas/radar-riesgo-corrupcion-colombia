@@ -1,0 +1,23 @@
+raw_value,modalidad_norm,es_competitiva,es_abierta
+Licitación pública,LICITACION_PUBLICA,true,true
+Licitación Pública,LICITACION_PUBLICA,true,true
+Licitación pública Obra Publica,LICITACION_PUBLICA,true,true
+Licitación Pública Acuerdo Marco de Precios,LICITACION_PUBLICA,true,true
+Selección Abreviada de Menor Cuantía,SELECCION_ABREVIADA,true,true
+Selección abreviada subasta inversa,SELECCION_ABREVIADA,true,true
+Seleccion Abreviada Menor Cuantia Sin Manifestacion Interes,SELECCION_ABREVIADA,true,true
+Selección Abreviada de Menor Cuantía (Ley 1150 de 2007),SELECCION_ABREVIADA,true,true
+Concurso de méritos abierto,CONCURSO_MERITOS,true,true
+Concurso de méritos con precalificación,CONCURSO_MERITOS,true,true
+Mínima cuantía,MINIMA_CUANTIA,false,true
+Contratación Mínima Cuantía,MINIMA_CUANTIA,false,true
+Contratación directa,CONTRATACION_DIRECTA,false,false
+Contratación Directa (con ofertas),CONTRATACION_DIRECTA,false,false
+Contratación Directa (Ley 1150 de 2007),CONTRATACION_DIRECTA,false,false
+Contratación régimen especial,REGIMEN_ESPECIAL,false,false
+Contratación régimen especial (con ofertas),REGIMEN_ESPECIAL,false,false
+Enajenación de bienes con subasta,OTRO,false,false
+Enajenación de bienes con sobre cerrado,OTRO,false,false
+Solicitud de información a los Proveedores,OTRO,false,false
+Subasta,OTRO,false,false
+Subasta de prueba,OTRO,false,false
