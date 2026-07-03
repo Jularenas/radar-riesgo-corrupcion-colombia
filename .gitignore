@@ -1,0 +1,28 @@
+# Node
+node_modules/
+dist/
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Pipeline data (keep .gitkeep files)
+pipeline/data/
+
+# DuckDB
+*.duckdb
+*.duckdb.wal
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+.ruff_cache/
+.pytest_cache/
+
+# macOS
+.DS_Store
+
+# Web build artifacts / data output (fixtures handled per-file)
+web/public/data/
