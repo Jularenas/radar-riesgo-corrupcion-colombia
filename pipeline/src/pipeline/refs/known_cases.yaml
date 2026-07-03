@@ -1,0 +1,252 @@
+# Known landmark corruption cases — Colombia
+# Used for SECOP I targeted slices and validation of the risk model.
+# Source citations link to official press releases or major outlets.
+# NIT null = unknown / not required (name-matching used in M2+).
+
+- slug: centros-poblados
+  nombre: "Contrato Centros Poblados — MinTIC"
+  periodo: [2020, 2021]
+  secop1: false
+  entidades:
+    - nombre: "FONDO UNICO DE TECNOLOGIAS DE LA INFORMACION Y LAS COMUNICACIONES"
+      nit: "830.115.995"
+  proveedores:
+    - nombre: "UNION TEMPORAL CENTROS POBLADOS"
+      nit: null
+  hint_entidad_like:
+    - "%FONDO UNICO DE TECNOLOGIAS%"
+    - "%TECNOLOGIAS DE LA INFORMACION%"
+  resumen: >
+    Anticipo de $70.243 millones girado por el FONTIC al consorcio Unión
+    Temporal Centros Poblados para conectividad en zonas rurales. El anticipo
+    fue respaldado por garantías falsas emitidas por compañías de seguros
+    inexistentes. El contrato fue liquidado sin la entrega de los servicios
+    pactados. Investigaciones de la Fiscalía, Contraloría y Procuraduría.
+  fuentes:
+    - "https://www.fiscalia.gov.co/colombia/noticias/en-juicio-oral-caso-centros-poblados-se-busca-la-verdad/"
+    - "https://www.contraloria.gov.co/centros-poblados"
+    - "https://www.elespectador.com/judicial/caso-centros-poblados-todo-lo-que-se-sabe/"
+
+- slug: ungrd-carrotanques
+  nombre: "UNGRD — Carrotanques La Guajira 2023–2024"
+  periodo: [2023, 2024]
+  secop1: false
+  entidades:
+    - nombre: "UNIDAD NACIONAL PARA LA GESTION DEL RIESGO DE DESASTRES"
+      nit: "900.643.049"
+  proveedores:
+    - nombre: null
+      nit: null
+  hint_entidad_like:
+    - "%UNIDAD NACIONAL PARA LA GESTION DEL RIESGO%"
+    - "%GESTION DEL RIESGO DE DESASTRES%"
+  resumen: >
+    Contratos de suministro de agua potable en La Guajira mediante carrotanques,
+    adjudicados directamente a empresas sin experiencia. Hallazgos de la
+    Contraloría señalan sobrecostos y entrega parcial del servicio. Casos
+    vinculados a la crisis humanitaria en La Guajira.
+  fuentes:
+    - "https://www.contraloria.gov.co/web/cgr/-/contraloria-halla-hallazgos-en-contratos-de-suministro-de-agua-en-la-guajira"
+    - "https://www.semana.com/nacion/articulo/ungrd-y-los-contratos-de-carrotanques-en-la-guajira/202400/"
+
+- slug: pae-la-guajira
+  nombre: "PAE La Guajira — Programa de Alimentación Escolar 2016–2018"
+  periodo: [2016, 2018]
+  secop1: true
+  entidades:
+    - nombre: "DEPARTAMENTO DE LA GUAJIRA"
+      nit: "891.780.008"
+    - nombre: "SECRETARIA DE EDUCACION DEPARTAMENTAL LA GUAJIRA"
+      nit: null
+  proveedores:
+    - nombre: null
+      nit: null
+  hint_entidad_like:
+    - "%GOBERNACION DE LA GUAJIRA%"
+    - "%SECRETARIA DE EDUCACION%LA GUAJIRA%"
+    - "%DEPARTAMENTO DE LA GUAJIRA%"
+  resumen: >
+    Irregularidades en la contratación del Programa de Alimentación Escolar
+    en La Guajira: sobrecostos, incumplimiento en la entrega de raciones,
+    contratos directos a empresas sin trayectoria. La Contraloría abrió
+    procesos de responsabilidad fiscal contra contratistas y funcionarios.
+  fuentes:
+    - "https://www.contraloria.gov.co/web/cgr/comunicados-de-prensa/-/asset_publisher/T6N4BFLE4Eoy/content/contraloria-investiga-pae-la-guajira"
+    - "https://www.eltiempo.com/justicia/investigacion/pae-la-guajira-irregularidades-contratos-alimentacion-escolar/"
+
+- slug: pae-santander
+  nombre: "PAE Santander — Programa de Alimentación Escolar"
+  periodo: [2016, 2020]
+  secop1: true
+  entidades:
+    - nombre: "DEPARTAMENTO DE SANTANDER"
+      nit: "890.202.002"
+    - nombre: "SECRETARIA DE EDUCACION SANTANDER"
+      nit: null
+  proveedores:
+    - nombre: null
+      nit: null
+  hint_entidad_like:
+    - "%GOBERNACION DE SANTANDER%"
+    - "%SECRETARIA DE EDUCACION%SANTANDER%"
+    - "%DEPARTAMENTO DE SANTANDER%"
+  resumen: >
+    Contratos del PAE en Santander con irregularidades: adiciones contractuales
+    excesivas, entrega parcial de raciones, posibles acuerdos entre oferentes.
+    La Contraloría y la Procuraduría abrieron investigaciones.
+  fuentes:
+    - "https://www.contraloria.gov.co/web/cgr/comunicados-de-prensa/-/asset_publisher/T6N4BFLE4Eoy/content/hallazgos-pae-santander"
+    - "https://www.vanguardia.com/santander/bucaramanga/pae-santander-irregularidades-contratos/"
+
+- slug: ruta-del-sol-odebrecht
+  nombre: "Ruta del Sol II — Odebrecht / Corficolombiana (ANI/INCO)"
+  periodo: [2010, 2016]
+  secop1: true
+  entidades:
+    - nombre: "AGENCIA NACIONAL DE INFRAESTRUCTURA"
+      nit: "900.378.421"
+    - nombre: "INSTITUTO NACIONAL DE CONCESIONES"
+      nit: "830.118.623"
+  proveedores:
+    - nombre: "CONCESIONARIA RUTA DEL SOL SAS"
+      nit: "900.375.170"
+    - nombre: "ODEBRECHT"
+      nit: null
+  hint_entidad_like:
+    - "%AGENCIA NACIONAL DE INFRAESTRUCTURA%"
+    - "%INSTITUTO NACIONAL DE CONCESIONES%"
+  resumen: >
+    Contrato de concesión vial Ruta del Sol Sector 2 (2010). Odebrecht pagó
+    sobornos de aproximadamente $6.5 millones USD a funcionarios colombianos
+    para obtener y mantener el contrato. La Fiscalía abrió investigaciones
+    contra políticos y empresarios. El contrato fue liquidado anticipadamente
+    en 2017. Uno de los mayores escándalos de corrupción en infraestructura
+    de Colombia.
+  fuentes:
+    - "https://www.fiscalia.gov.co/colombia/noticias/fiscalia-imputara-cargos-en-caso-odebrecht/"
+    - "https://www.contraloria.gov.co/web/cgr/ruta-del-sol-odebrecht"
+    - "https://www.elespectador.com/judicial/caso-odebrecht-colombia-todo-lo-que-se-sabe/"
+
+- slug: carrusel-contratacion-idu
+  nombre: "Carrusel de la Contratación — IDU Bogotá 2008–2012"
+  periodo: [2008, 2012]
+  secop1: true
+  entidades:
+    - nombre: "INSTITUTO DE DESARROLLO URBANO"
+      nit: "800.153.367"
+  proveedores:
+    - nombre: "MARIO NULE"
+      nit: null
+    - nombre: "GRUPO NULE"
+      nit: null
+  hint_entidad_like:
+    - "%INSTITUTO DE DESARROLLO URBANO%"
+    - "%IDU%"
+  resumen: >
+    Red de corrupción en contratos de infraestructura vial del IDU (Bogotá).
+    El Grupo Nule y otros contratistas pagaban coimas del 10–15% del valor
+    de cada contrato a políticos y funcionarios. Involucró contratos por más
+    de $1.5 billones. Condenas contra contratistas y funcionarios del Distrito.
+  fuentes:
+    - "https://www.fiscalia.gov.co/colombia/noticias/carrusel-de-la-contratacion-bogota/"
+    - "https://www.eltiempo.com/justicia/investigacion/carrusel-de-la-contratacion-idu-bogota/"
+    - "https://www.semana.com/nacion/articulo/carrusel-de-contratacion-bogota-historia/"
+
+- slug: cartel-hemofilia-cordoba
+  nombre: "Cartel de la Hemofilia — Córdoba 2013–2015"
+  periodo: [2013, 2015]
+  secop1: true
+  entidades:
+    - nombre: "DEPARTAMENTO DE CORDOBA"
+      nit: "891.480.031"
+    - nombre: "SECRETARIA DE SALUD CORDOBA"
+      nit: null
+    - nombre: "GOBERNACION DE CORDOBA"
+      nit: null
+  proveedores:
+    - nombre: null
+      nit: null
+  hint_entidad_like:
+    - "%GOBERNACION DE CORDOBA%"
+    - "%SECRETARIA DE SALUD%CORDOBA%"
+    - "%DEPARTAMENTO DE CORDOBA%"
+  resumen: >
+    Contratos fraudulentos de suministro de medicamentos para hemofilia en
+    Córdoba: medicamentos nunca entregados o de calidad inferior, facturas
+    infladas. La Fiscalía investigó a funcionarios de la Gobernación y
+    proveedores farmacéuticos.
+  fuentes:
+    - "https://www.fiscalia.gov.co/colombia/noticias/cartel-hemofilia-cordoba/"
+    - "https://www.elcolombiano.com/colombia/paz-y-derechos-humanos/cartel-hemofilia-cordoba-investigados/"
+
+- slug: cartel-sida-cordoba
+  nombre: "Cartel del SIDA — Córdoba"
+  periodo: [2011, 2015]
+  secop1: true
+  entidades:
+    - nombre: "DEPARTAMENTO DE CORDOBA"
+      nit: "891.480.031"
+    - nombre: "SECRETARIA DE SALUD CORDOBA"
+      nit: null
+  proveedores:
+    - nombre: null
+      nit: null
+  hint_entidad_like:
+    - "%GOBERNACION DE CORDOBA%"
+    - "%SECRETARIA DE SALUD%CORDOBA%"
+  resumen: >
+    Fraude en contratos de suministro de antirretrovirales (ARV) para pacientes
+    con VIH/SIDA en Córdoba. Medicamentos cobrados como entregados sin cumplir
+    especificaciones o sin entrega real. Investigaciones de la Fiscalía y la
+    Contraloría revelaron detrimento patrimonial al sistema de salud.
+  fuentes:
+    - "https://www.fiscalia.gov.co/colombia/noticias/cartel-sida-cordoba/"
+    - "https://www.elespectador.com/salud/cartel-del-sida-cordoba-investigan-contratos-antirretrovirales/"
+
+- slug: sobrecostos-covid-bogota
+  nombre: "Sobrecostos COVID-19 — Bogotá 2020"
+  periodo: [2020, 2020]
+  secop1: false
+  entidades:
+    - nombre: "SECRETARIA DISTRITAL DE SALUD"
+      nit: "899.999.061"
+    - nombre: "EMPRESA SOCIAL DEL ESTADO HOSPITAL"
+      nit: null
+  proveedores:
+    - nombre: null
+      nit: null
+  hint_entidad_like:
+    - "%SECRETARIA DISTRITAL DE SALUD%"
+    - "%SECRETARIA DE SALUD%BOGOTA%"
+  resumen: >
+    Contratos de urgencia para suministro de elementos de protección personal
+    (EPP) y ventiladores durante la pandemia COVID-19 en Bogotá con sobrecostos
+    significativos frente a precios de referencia. Contraloría de Bogotá halló
+    irregularidades en contratos de emergencia adjudicados directamente.
+  fuentes:
+    - "https://contraloria.bogota.gov.co/comunicados/contratos-covid-irregularidades"
+    - "https://www.semana.com/nacion/articulo/sobrecostos-covid-bogota-contratos-epp/"
+
+- slug: sobrecostos-covid-medellin
+  nombre: "Sobrecostos COVID-19 — Medellín 2020"
+  periodo: [2020, 2020]
+  secop1: false
+  entidades:
+    - nombre: "ALCALDIA DE MEDELLIN"
+      nit: "890.905.211"
+    - nombre: "SECRETARIA DE SALUD MEDELLIN"
+      nit: null
+  proveedores:
+    - nombre: null
+      nit: null
+  hint_entidad_like:
+    - "%ALCALDIA DE MEDELLIN%"
+    - "%SECRETARIA DE SALUD%MEDELLIN%"
+    - "%MUNICIPIO DE MEDELLIN%"
+  resumen: >
+    Contratos de urgencia para insumos COVID-19 en Medellín con precios
+    superiores a los del mercado. La Contraloría departamental abrió
+    indagaciones preliminares por posible detrimento patrimonial.
+  fuentes:
+    - "https://www.elcolombiano.com/antioquia/medellin/contratos-covid-medellin-sobrecostos-investigacion/"
+    - "https://contraloriamedellin.gov.co/covid-contratos-irregulares"

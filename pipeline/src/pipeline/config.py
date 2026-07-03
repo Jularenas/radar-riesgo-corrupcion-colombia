@@ -28,6 +28,8 @@ DATASETS: dict[str, str] = {
     # Entity registries (RUES)
     "e1_rues_santarosa": "c82u-588k",
     "e1_rues_ibague": "gwqv-sqvs",
+    # Geography (discovered in M1 via Socrata catalog — ID confirmed live)
+    "e2_divipola": "gdxc-w37w",
 }
 
 # ---------------------------------------------------------------------------
