@@ -1,7 +1,7 @@
 # Radar de Riesgo de Corrupcion -- Colombia
 # Compatible with GNU Make 3.81 (POSIX, no GNU-4-only features)
 
-.PHONY: check web pull pull-sample pull-full marts flags score export all
+.PHONY: check web pull pull-sample pull-full marts rues-coverage flags score export all
 
 check:
 	cd pipeline && uv run ruff check . && uv run pytest -q
@@ -34,6 +34,11 @@ marts:
 	fi
 	cd pipeline && uv run python -m pipeline.clean.profile
 
+# M4: populate dim_proveedor.fecha_matricula from RUES chamber data, then report coverage
+rues-coverage:
+	cd pipeline && uv run python -m pipeline.clean.enrich_rues
+	cd pipeline && uv run python -m pipeline.clean.rues_coverage
+
 flags:
 	@echo "TODO (M3)"
 
@@ -43,4 +48,4 @@ score:
 export:
 	@echo "TODO (M6)"
 
-all: pull marts flags score export web
+all: pull marts rues-coverage flags score export web
