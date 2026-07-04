@@ -149,7 +149,7 @@ def discover_divipola(client: SocrataClient) -> str:
 
 def ensure_divipola_in_config(dataset_id: str) -> None:
     """Patch DATASETS dict at runtime (for this process) and update config.py."""
-    config_path = Path(__file__).resolve().parents[2] / "config.py"
+    config_path = Path(__file__).resolve().parents[1] / "config.py"
     text = config_path.read_text()
     if "e2_divipola" in text:
         # Already present; just update runtime dict

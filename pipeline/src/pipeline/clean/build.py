@@ -21,7 +21,7 @@ import duckdb
 # Paths
 # ---------------------------------------------------------------------------
 _HERE = Path(__file__).resolve()
-_PIPELINE_ROOT = _HERE.parents[4]  # src/pipeline/clean/ → pipeline/
+_PIPELINE_ROOT = _HERE.parents[3]  # src/pipeline/clean/build.py → pipeline/
 _DATA_ROOT = _PIPELINE_ROOT / "data"
 _REFS_DIR = _HERE.parent.parent / "refs"  # src/pipeline/refs/
 
@@ -812,7 +812,7 @@ def _write_dq_report(
     sancion_counts: list, n_mc: int,
 ) -> None:
     """Generate docs/DQ_REPORT.md."""
-    docs_dir = _DATA_ROOT.parent / "docs"
+    docs_dir = _PIPELINE_ROOT.parent / "docs"
     docs_dir.mkdir(parents=True, exist_ok=True)
     out_path = docs_dir / "DQ_REPORT.md"
 

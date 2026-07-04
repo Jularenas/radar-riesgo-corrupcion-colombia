@@ -10,30 +10,29 @@ Total rows: 300,000
 
 | Column | Type | Null % | N Distinct | Examples |
 |--------|------|--------|------------|---------|
-| `nombre_entidad` | VARCHAR | 0.0% | 2,871 | ALCALDÍA DISTRITAL DE SANTA MARTA; SIC SUPERINTENDENCIA DE INDUSTRIA Y COMERCIO |
-| `nit_entidad` | VARCHAR | 0.0% | 2,442 | 891800395; 891780009 |
+| `nombre_entidad` | VARCHAR | 0.0% | 2,871 | EMPRESA DE SERVICIOS PUBLICOS DE CHIA E.S.P.; SENA REGIONAL ATLANTICO Intercentr |
+| `nit_entidad` | VARCHAR | 0.0% | 2,442 | 901154852; 800214750 |
 | `departamento` | VARCHAR | 0.0% | 34 | Magdalena; Casanare |
 | `ciudad` | VARCHAR | 0.0% | 568 | Ibagué; Sabaneta |
 | `localizaci_n` | VARCHAR | 0.0% | 694 | Colombia,  Bolívar ,  Simití; Colombia,  Cundinamarca , No Definido |
 | `orden` | VARCHAR | 0.0% | 4 | Nacional; No Definido |
-| `sector` | VARCHAR | 0.0% | 26 | defensa; deportes |
+| `sector` | VARCHAR | 0.0% | 26 | No aplica/No pertenece; Cultura |
 | `rama` | VARCHAR | 0.0% | 5 | Ejecutivo; Judicial |
 | `entidad_centralizada` | VARCHAR | 0.0% | 2 | Centralizada; Descentralizada |
-| `proceso_de_compra` | VARCHAR | 0.0% | 277,979 | CO1.BDOS.3999321; CO1.BDOS.3784070 |
-| `id_contrato` | VARCHAR | 0.0% | 299,979 | CO1.PCCNTR.5209694; CO1.PCCNTR.5050359 |
-| `referencia_del_contrato` | VARCHAR | 0.0% | 239,282 | 104-7-20444-23; ECAM-MC-002-2023 |
-| `estado_contrato` | VARCHAR | 0.0% | 9 | Borrador; terminado |
-| `codigo_de_categoria_principal` | VARCHAR | 0.0% | 5,184 | V1.81101500; V1.80111501 |
-| `descripcion_del_proceso` | VARCHAR | 0.0% | 208,572 | Prestar sus servicios profesionales; por sus propios medios con plena
-autonomía  |
+| `proceso_de_compra` | VARCHAR | 0.0% | 277,979 | CO1.BDOS.4688943; CO1.BDOS.4751504 |
+| `id_contrato` | VARCHAR | 0.0% | 299,979 | CO1.PCCNTR.4668656; CO1.PCCNTR.5528147 |
+| `referencia_del_contrato` | VARCHAR | 0.0% | 239,282 | 2951 DE 17 DE OCTUBRE DE 2023; CPS 669-2023 |
+| `estado_contrato` | VARCHAR | 0.0% | 9 | Borrador; Cancelado |
+| `codigo_de_categoria_principal` | VARCHAR | 0.0% | 5,184 | V1.80111501; V1.50211502 |
+| `descripcion_del_proceso` | VARCHAR | 0.0% | 208,572 | PRESTAR SERVICIOS PROFESIONALES A LA SECRETARÍA DE DESARROLLO ECONÓMICO; Prestac |
 | `tipo_de_contrato` | VARCHAR | 0.0% | 21 | Comodato; Servicios financieros |
-| `modalidad_de_contratacion` | VARCHAR | 0.0% | 14 | Licitación Pública Acuerdo Marco de Precios; Contratación Directa (con ofertas) |
+| `modalidad_de_contratacion` | VARCHAR | 0.0% | 14 | Mínima cuantía; Enajenación de bienes con sobre cerrado |
 | `justificacion_modalidad_de` | VARCHAR | 0.0% | 32 | Servicios profesionales y apoyo a la gestión; No existe pluralidad de oferentes  |
 | `fecha_de_firma` | VARCHAR | 0.0% | 362 | 2023-07-06 00:00:00.000000000; 2023-01-30 00:00:00.000000000 |
-| `fecha_de_inicio_del_contrato` | VARCHAR | 1.0% | 564 | 2023-03-10 00:00:00.000000000; 2023-12-02 00:00:00.000000000 |
+| `fecha_de_inicio_del_contrato` | VARCHAR | 1.0% | 564 | 2023-07-24 00:00:00.000000000; 2023-04-27 00:00:00.000000000 |
 | `fecha_de_fin_del_contrato` | VARCHAR | 0.0% | 1,784 | 2024-01-31 00:00:00.000000000; 2023-01-30 00:00:00.000000000 |
-| `condiciones_de_entrega` | VARCHAR | 0.0% | 22 | NXTWY.DLVY.3; NXTWY.DLVY.10 |
-| `tipodocproveedor` | VARCHAR | 0.0% | 10 | Pasaporte; Cédula de Extranjería |
+| `condiciones_de_entrega` | VARCHAR | 0.0% | 22 | A convenir; NXTWY.DLVY.3 |
+| `tipodocproveedor` | VARCHAR | 0.0% | 10 | Pasaporte; NIT |
 | `documento_proveedor` | VARCHAR | 0.0% | 233,422 | 1022392561; 74372211 |
 | `proveedor_adjudicado` | VARCHAR | 0.0% | 233,091 | Adriana Maria Gonzalez Puliche; MARA LUCIA ALVAREZ DOMINGUEZ |
 | `es_grupo` | VARCHAR | 0.0% | 2 | No; Si |
@@ -45,57 +44,57 @@ autonomía  |
 | `reversion` | VARCHAR | 0.0% | 2 | No; Si |
 | `origen_de_los_recursos` | VARCHAR | 0.0% | 2 | Distribuido; Recursos Propios |
 | `destino_gasto` | VARCHAR | 0.0% | 3 | Inversión; No Definido |
-| `valor_del_contrato` | VARCHAR | 0.0% | 100,188 | 14280000; 60543000 |
-| `valor_de_pago_adelantado` | VARCHAR | 0.0% | 319 | 137297899; 26192466 |
-| `valor_facturado` | VARCHAR | 0.0% | 74,522 | 17400000; 9684606 |
+| `valor_del_contrato` | VARCHAR | 0.0% | 100,188 | 5477472; 1000000 |
+| `valor_de_pago_adelantado` | VARCHAR | 0.0% | 319 | 3750000; 128600000 |
+| `valor_facturado` | VARCHAR | 0.0% | 74,522 | 14280000; 60543000 |
 | `valor_pendiente_de_pago` | VARCHAR | 0.0% | 74,688 | 35000000; 100327526 |
-| `valor_pagado` | VARCHAR | 0.0% | 68,072 | 17400000; 9684606 |
-| `valor_amortizado` | VARCHAR | 0.0% | 108 | 12300000; 3600000 |
+| `valor_pagado` | VARCHAR | 0.0% | 68,072 | 5477472; 3300000 |
+| `valor_amortizado` | VARCHAR | 0.0% | 108 | 3722082; 10124352 |
 | `valor_pendiente_de` | VARCHAR | 0.0% | 263 | 137297899; 26192466 |
-| `valor_pendiente_de_ejecucion` | VARCHAR | 0.0% | 74,688 | 11078165; 11051887 |
+| `valor_pendiente_de_ejecucion` | VARCHAR | 0.0% | 74,688 | 0; 2300000 |
 | `saldo_cdp` | VARCHAR | 0.0% | 85,705 | 347000000; 17400000 |
 | `saldo_vigencia` | VARCHAR | 0.0% | 2,546 | 28163658014; 21631114 |
 | `espostconflicto` | VARCHAR | 0.0% | 2 | No; Si |
-| `dias_adicionados` | VARCHAR | 0.0% | 412 | 72; 183 |
-| `puntos_del_acuerdo` | VARCHAR | 0.0% | 7 | ParticipacionPolitica; TG |
-| `pilares_del_acuerdo` | VARCHAR | 0.0% | 20 | DSViviendaYAguaPotable; DSSalud |
+| `dias_adicionados` | VARCHAR | 0.0% | 412 | 183; 72 |
+| `puntos_del_acuerdo` | VARCHAR | 0.0% | 7 | TG; ParticipacionPolitica |
+| `pilares_del_acuerdo` | VARCHAR | 0.0% | 20 | DSViviendaYAguaPotable; No aplica |
 | `urlproceso` | VARCHAR | 0.0% | 277,861 | https://community.secop.gov.co/Public/Tendering/OpportunityDetail/Index?noticeUI |
-| `nombre_representante_legal` | VARCHAR | 0.0% | 232,356 | HUGO MAURICIO SANCHEZ CARVAJAL; HAROLD FERNANDO OSORIO GUZMAN |
-| `nacionalidad_representante_legal` | VARCHAR | 0.0% | 49 | ES; BR |
-| `domicilio_representante_legal` | VARCHAR | 0.0% | 82,745 | calle 3 sur #5-72; calle 13 # 57-50 piso 4 cu 54 |
-| `tipo_de_identificaci_n_representante_legal` | VARCHAR | 0.0% | 10 | Pasaporte; NIT |
+| `nombre_representante_legal` | VARCHAR | 0.0% | 232,356 | Juliana Loaiza Blandon; PABLO CÉSAR OSPINA VÁSQUEZ |
+| `nacionalidad_representante_legal` | VARCHAR | 0.0% | 49 | CU; BR |
+| `domicilio_representante_legal` | VARCHAR | 0.0% | 82,745 | Torres del Rio Torre G Apto 103; Cll34#1400 este samateo bosque |
+| `tipo_de_identificaci_n_representante_legal` | VARCHAR | 0.0% | 10 | Pasaporte; Permiso especial de permanencia |
 | `identificaci_n_representante_legal` | VARCHAR | 0.0% | 98,333 | 1121908183; 8.374.582 |
 | `g_nero_representante_legal` | VARCHAR | 0.0% | 4 | Mujer; No Definido |
-| `presupuesto_general_de_la_nacion_pgn` | VARCHAR | 0.0% | 33,124 | 55440000; 21849760 |
-| `sistema_general_de_participaciones` | VARCHAR | 0.0% | 6,102 | 2320000; 6000000 |
-| `sistema_general_de_regal_as` | VARCHAR | 0.0% | 2,183 | 0; 21636720 |
-| `recursos_propios_alcald_as_gobernaciones_y_resguardos_ind_genas_` | VARCHAR | 0.0% | 42,014 | 0; 11896500 |
+| `presupuesto_general_de_la_nacion_pgn` | VARCHAR | 0.0% | 33,124 | 188398498; 100327526 |
+| `sistema_general_de_participaciones` | VARCHAR | 0.0% | 6,102 | 1000000; 90000000 |
+| `sistema_general_de_regal_as` | VARCHAR | 0.0% | 2,183 | 6874969133; 28728000 |
+| `recursos_propios_alcald_as_gobernaciones_y_resguardos_ind_genas_` | VARCHAR | 0.0% | 42,014 | 17400000; 35000000 |
 | `recursos_de_credito` | VARCHAR | 0.0% | 693 | 45020635528; 41496000 |
-| `recursos_propios` | VARCHAR | 0.0% | 30,928 | 1000000; 35000000 |
-| `ultima_actualizacion` | VARCHAR | 31.9% | 1,174 | 2026-03-19 00:00:00.000000000; 2026-05-08 00:00:00.000000000 |
-| `codigo_entidad` | VARCHAR | 0.0% | 2,873 | 704063072; 700403058 |
-| `codigo_proveedor` | VARCHAR | 0.0% | 234,204 | 720398478; 703824359 |
-| `fecha_inicio_liquidacion` | VARCHAR | 14.5% | 2,009 | 2023-08-08T00:00:00.000; 2023-05-13T00:00:00.000 |
+| `recursos_propios` | VARCHAR | 0.0% | 30,928 | 3600000; 301600000 |
+| `ultima_actualizacion` | VARCHAR | 31.9% | 1,174 | 2024-03-15 00:00:00.000000000; 2023-08-16 00:00:00.000000000 |
+| `codigo_entidad` | VARCHAR | 0.0% | 2,873 | 706486917; 704629146 |
+| `codigo_proveedor` | VARCHAR | 0.0% | 234,204 | 710252669; 703094003 |
+| `fecha_inicio_liquidacion` | VARCHAR | 14.5% | 2,009 | 2023-05-15T00:00:00.000; 2023-12-31T00:00:00.000 |
 | `fecha_fin_liquidacion` | VARCHAR | 87.3% | 1,854 | 2024-03-26 00:00:00.000000000; 2026-05-08 00:00:00.000000000 |
-| `objeto_del_contrato` | VARCHAR | 0.0% | 212,487 | PRESTACION DE SERVICIOS COMO TECNOLOGO EN REGENCIA DE FARMACIA PARA LA UNIDAD DE |
-| `duraci_n_del_contrato` | VARCHAR | 0.0% | 1,293 | 3 Mes(es); 236 Dia(s) |
+| `objeto_del_contrato` | VARCHAR | 0.0% | 212,487 | Prestacion de servicio de apoyo administrativo y documental de la entidad.; PRES |
+| `duraci_n_del_contrato` | VARCHAR | 0.0% | 1,293 | 132 Mes(es); 3 Mes(es) |
 | `nombre_del_banco` | VARCHAR | 0.0% | 3,652 | BOGOTA; Scotibank colpatria |
-| `tipo_de_cuenta` | VARCHAR | 0.0% | 3 | Corriente; No Definido |
-| `n_mero_de_cuenta` | VARCHAR | 0.0% | 127,079 | 407263953; 488412521202 |
-| `el_contrato_puede_ser_prorrogado` | VARCHAR | 0.0% | 2 | Si; No |
-| `fecha_de_notificaci_n_de_prorrogaci_n` | VARCHAR | 76.0% | 1,304 | 2023-11-15 00:00:00.000000000; 2023-09-12 00:00:00.000000000 |
-| `nombre_ordenador_del_gasto` | VARCHAR | 0.0% | 5,156 | ANDRES EDUARDO GOMEZ MARTINEZ; JOSE LUIS SANCHEZ CARDONA |
+| `tipo_de_cuenta` | VARCHAR | 0.0% | 3 | Ahorros; Corriente |
+| `n_mero_de_cuenta` | VARCHAR | 0.0% | 127,079 | 0385012265; 83885121627 |
+| `el_contrato_puede_ser_prorrogado` | VARCHAR | 0.0% | 2 | No; Si |
+| `fecha_de_notificaci_n_de_prorrogaci_n` | VARCHAR | 76.0% | 1,304 | 2023-12-01 00:00:00.000000000; 2023-08-16 00:00:00.000000000 |
+| `nombre_ordenador_del_gasto` | VARCHAR | 0.0% | 5,156 | Luis Alberto Neira Sánchez; GISELLE INGRID PAVA ARIAS |
 | `tipo_de_documento_ordenador_del_gasto` | VARCHAR | 0.0% | 7 | Cédula de Extranjería; NIT |
-| `n_mero_de_documento_ordenador_del_gasto` | VARCHAR | 0.0% | 5,020 | 71581789; 73581599 |
-| `nombre_supervisor` | VARCHAR | 0.0% | 25,978 | Juan Pablo Esterilla Puentes; MARLENY SOLER GUTIERREZ |
-| `tipo_de_documento_supervisor` | VARCHAR | 0.0% | 8 | Permiso especial de permanencia; NIT |
+| `n_mero_de_documento_ordenador_del_gasto` | VARCHAR | 0.0% | 5,020 | 73581599; 52808564 |
+| `nombre_supervisor` | VARCHAR | 0.0% | 25,978 | JUAN MANUEL GOMEZ POSADA; SAMIR SERPA ALVAREZ |
+| `tipo_de_documento_supervisor` | VARCHAR | 0.0% | 8 | NIT; Cédula de Ciudadanía |
 | `n_mero_de_documento_supervisor` | VARCHAR | 0.0% | 25,132 | 1051475494; 42125024 |
-| `nombre_ordenador_de_pago` | VARCHAR | 0.0% | 3,630 | ERIKA PARALES PEREZ; Sonia Enciso Mosquera |
-| `tipo_de_documento_ordenador_de_pago` | VARCHAR | 0.0% | 7 | Cédula de Extranjería; NIT |
+| `nombre_ordenador_de_pago` | VARCHAR | 0.0% | 3,630 | Juan Esteban Espinel Díaz; RAFAEL DEL CRISTO CUESTA CASTRO |
+| `tipo_de_documento_ordenador_de_pago` | VARCHAR | 0.0% | 7 | Citizenship Identification; Cédula de Extranjería |
 | `n_mero_de_documento_ordenador_de_pago` | VARCHAR | 0.0% | 3,589 | 89005299; 93414641 |
 | `documentos_tipo` | VARCHAR | 0.0% | 2 | No; Si |
-| `descripcion_documentos_tipo` | VARCHAR | 0.0% | 13 | Sector de agua potable y saneamiento básico; Convenios solidarios - Régimen artí |
-| `:id` | VARCHAR | 0.0% | 300,000 | row-xmim_zkp2~z3vq; row-ki8b-knux.tr43 |
+| `descripcion_documentos_tipo` | VARCHAR | 0.0% | 13 | Sector de agua potable y saneamiento básico; Infraestructura de transporte (Cons |
+| `:id` | VARCHAR | 0.0% | 300,000 | row-wckg_9tgh_rigd; row-34jr-mnj8~dpih |
 
 ---
 
@@ -105,35 +104,35 @@ Total rows: 300,000
 
 | Column | Type | Null % | N Distinct | Examples |
 |--------|------|--------|------------|---------|
-| `referencia_del_proceso` | VARCHAR | 0.0% | 241,977 | OPS006-2023; 5200683 |
-| `id_del_portafolio` | VARCHAR | 0.0% | 287,137 | CO1.BDOS.4072189; CO1.BDOS.4796660 |
-| `id_del_proceso` | VARCHAR | 0.0% | 288,838 | CO1.REQ.5181703; CO1.REQ.4164530 |
-| `entidad` | VARCHAR | 0.0% | 8,465 | COLEGIO CIUDAD DE MONTREAL IED; SENA REGIONAL VALLE Grupo de Apoyo Administrativ |
+| `referencia_del_proceso` | VARCHAR | 0.0% | 241,977 | IEDFPS-RE-2023-001; CTO 229-2023 WILSON AYALA |
+| `id_del_portafolio` | VARCHAR | 0.0% | 287,137 | CO1.BDOS.4451862; CO1.BDOS.4232678 |
+| `id_del_proceso` | VARCHAR | 0.0% | 288,838 | CO1.REQ.4653147; CO1.REQ.4959041 |
+| `entidad` | VARCHAR | 0.0% | 8,465 | GOBERNACION DEL MAGDALENA; UNIVERSIDAD DE LA AMAZONIA (Entidad) |
 | `nit_entidad` | VARCHAR | 0.0% | 8,376 | 800194096; 890980807 |
 | `departamento_entidad` | VARCHAR | 0.0% | 34 | Casanare; Magdalena |
 | `ciudad_entidad` | VARCHAR | 0.0% | 929 | San Francisco; Sabaneta |
-| `modalidad_de_contratacion` | VARCHAR | 0.0% | 17 | Licitación Pública Acuerdo Marco de Precios; Contratación directa |
-| `fase` | VARCHAR | 0.0% | 14 | Manifestación de interés (Menor Cuantía); Clarification submission |
-| `estado_del_procedimiento` | VARCHAR | 0.0% | 7 | Cancelado; Aprobado |
+| `modalidad_de_contratacion` | VARCHAR | 0.0% | 17 | Licitación Pública Acuerdo Marco de Precios; Contratación régimen especial (con  |
+| `fase` | VARCHAR | 0.0% | 14 | Presentación de Observaciones; Manifestación de interés (Menor Cuantía) |
+| `estado_del_procedimiento` | VARCHAR | 0.0% | 7 | Abierto; Seleccionado |
 | `fecha_de_publicacion_del` | VARCHAR | 0.0% | 362 | 2023-04-08 00:00:00.000000000; 2023-02-22 00:00:00.000000000 |
-| `fecha_de_recepcion_de` | VARCHAR | 86.9% | 361 | 2023-07-06 00:00:00.000000000; 2023-01-30 00:00:00.000000000 |
+| `fecha_de_recepcion_de` | VARCHAR | 86.9% | 361 | 2023-07-06 00:00:00.000000000; 2023-02-21 00:00:00.000000000 |
 | `precio_base` | VARCHAR | 0.0% | 98,828 | 1222705; 1546983513 |
 | `duracion` | VARCHAR | 0.0% | 695 | 135; 195 |
-| `unidad_de_duracion` | VARCHAR | 0.0% | 6 | Año(s); Semana(s) |
-| `proveedores_invitados` | VARCHAR | 0.0% | 2,050 | 164; 174 |
-| `proveedores_con_invitacion` | VARCHAR | 0.0% | 150 | 34; 41 |
+| `unidad_de_duracion` | VARCHAR | 0.0% | 6 | Semana(s); Año(s) |
+| `proveedores_invitados` | VARCHAR | 0.0% | 2,050 | 135; 361 |
+| `proveedores_con_invitacion` | VARCHAR | 0.0% | 150 | 0; 74 |
 | `respuestas_al_procedimiento` | VARCHAR | 0.0% | 100 | 34; 109 |
 | `respuestas_externas` | VARCHAR | 0.0% | 10 | 6; 9 |
 | `conteo_de_respuestas_a_ofertas` | VARCHAR | 0.0% | 29 | 148; 41 |
 | `proveedores_unicos_con` | VARCHAR | 0.0% | 95 | 41; 34 |
-| `visualizaciones_del` | VARCHAR | 0.0% | 302 | 13; 23 |
+| `visualizaciones_del` | VARCHAR | 0.0% | 302 | 129; 250 |
 | `adjudicado` | VARCHAR | 0.0% | 2 | No; Si |
-| `valor_total_adjudicacion` | VARCHAR | 0.0% | 14,695 | 31631784; 24706414 |
-| `nombre_del_adjudicador` | VARCHAR | 0.0% | 5,377 | ZULAY MARÍA TAMARA ABRIL; EILEN TATIANA CANDANOZA LUBO |
+| `valor_total_adjudicacion` | VARCHAR | 0.0% | 14,695 | 32330000; 173107675 |
+| `nombre_del_adjudicador` | VARCHAR | 0.0% | 5,377 | JEYSON FERNEY UYABAN VANEGAS; YESICA JULIANA ESTEPA BELTRAN |
 | `nit_del_proveedor_adjudicado` | VARCHAR | 0.0% | 3,868 | 805019723; 900446662 |
-| `nombre_del_proveedor` | VARCHAR | 0.0% | 9,792 | DISFARMA GC SAS; ASOCIACIÓN INTERNACIONAL DE CONSULTORÍA |
+| `nombre_del_proveedor` | VARCHAR | 0.0% | 9,792 | MONART ZOMAC SAS; EYS COMPUTADORES S.A.S |
 | `urlproceso` | VARCHAR | 0.0% | 288,792 | https://community.secop.gov.co/Public/Tendering/OpportunityDetail/Index?noticeUI |
-| `:id` | VARCHAR | 0.0% | 300,000 | row-x6tv-nd4h.y4dc; row-i8e2.k8q2-wref |
+| `:id` | VARCHAR | 0.0% | 300,000 | row-2cdf~6fx6~shbt; row-dinj~jtre~3q6z |
 
 ---
 

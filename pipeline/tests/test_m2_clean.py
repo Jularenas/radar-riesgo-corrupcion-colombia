@@ -160,7 +160,7 @@ class TestModalidadMapping:
 
     def test_sample_s1_modalities_covered(self):
         """All S1 sample modalities must be in modalidades.csv."""
-        raw_dir = Path(__file__).parents[2] / "data/raw/sample"
+        raw_dir = Path(__file__).parents[1] / "data/raw/sample"
         refs_dir = Path(__file__).parents[1] / "src/pipeline/refs/modalidades.csv"
         if not raw_dir.exists():
             pytest.skip("Sample data not available")
@@ -183,7 +183,7 @@ class TestModalidadMapping:
 
     def test_sample_s2_modalities_covered(self):
         """All S2 sample modalities must be in modalidades.csv."""
-        raw_dir = Path(__file__).parents[2] / "data/raw/sample"
+        raw_dir = Path(__file__).parents[1] / "data/raw/sample"
         refs_dir = Path(__file__).parents[1] / "src/pipeline/refs/modalidades.csv"
         if not raw_dir.exists():
             pytest.skip("Sample data not available")

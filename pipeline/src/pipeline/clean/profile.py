@@ -20,7 +20,7 @@ from pathlib import Path
 import duckdb
 
 _HERE = Path(__file__).resolve()
-_PIPELINE_ROOT = _HERE.parents[4]
+_PIPELINE_ROOT = _HERE.parents[3]  # src/pipeline/clean/profile.py → pipeline/
 _DATA_ROOT = _PIPELINE_ROOT / "data"
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
@@ -179,7 +179,7 @@ def profile() -> None:
     # ---------------------------------------------------------------------------
     # Write report
     # ---------------------------------------------------------------------------
-    docs_dir = _DATA_ROOT.parent / "docs"
+    docs_dir = _PIPELINE_ROOT.parent / "docs"
     docs_dir.mkdir(parents=True, exist_ok=True)
     out_path = docs_dir / "PROFILING.md"
 
