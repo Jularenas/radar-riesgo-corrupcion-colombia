@@ -40,7 +40,7 @@ rues-coverage:
 	cd pipeline && uv run python -m pipeline.clean.rues_coverage
 
 flags:
-	@echo "TODO (M3)"
+	cd pipeline && uv run python -m pipeline.flags.run_all
 
 score:
 	@echo "TODO (M5)"
