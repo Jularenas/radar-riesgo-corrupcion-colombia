@@ -10,6 +10,9 @@ dist/
 # Pipeline data (keep .gitkeep files)
 pipeline/data/
 
+# Defensive: never track a stray top-level data dir (path-resolution bugs)
+/data/
+
 # DuckDB
 *.duckdb
 *.duckdb.wal

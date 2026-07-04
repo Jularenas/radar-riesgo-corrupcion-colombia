@@ -36,7 +36,7 @@ DATASETS: dict[str, str] = {
 # Data directories (resolved relative to the pipeline/ project root)
 # ---------------------------------------------------------------------------
 
-_PIPELINE_ROOT = Path(__file__).resolve().parents[3]  # src/pipeline/ → pipeline/
+_PIPELINE_ROOT = Path(__file__).resolve().parents[2]  # src/pipeline/config.py → pipeline/
 
 DATA_DIR = _PIPELINE_ROOT / "data"
 RAW_DIR = DATA_DIR / "raw"
