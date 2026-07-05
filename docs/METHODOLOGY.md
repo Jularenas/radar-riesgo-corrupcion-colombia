@@ -550,3 +550,27 @@ de mejora — todas fuera del alcance de "ajustar `weights.yaml`" — son:
 
 Ninguna de estas rutas es "ajustar un peso"; por eso no se intentaron como
 parte de la única iteración permitida en este milestone.
+
+## 8. Auditoría puntual (M8) — verificación contra la fuente oficial
+
+Por diseño (§ Marco legal/ético), cada contrato mostrado enlaza a su
+`urlproceso` en el portal público de SECOP. Como verificación de
+auditabilidad (PLAN.md, sección de Verificación, punto 4), se tomó una
+muestra aleatoria de 5 contratos de `casos_prioritarios/000.json` y se
+consultó, para cada uno, el mismo registro vía la API abierta de
+datos.gov.co (`jbjy-vk9h`, la fuente primaria de este mart) usando su
+`id_contrato`.
+
+**Resultado: 5/5 coincidencias exactas** en entidad, proveedor, valor y
+fecha de firma entre lo almacenado en el mart y el registro vivo en la
+API oficial (ejemplos: `CO1.PCCNTR.5679531` → ALCALDIA MUNICIPAL DE
+MOGOTES / SALUD VITAL Y RIESGOS PROFESIONALES IPS SAS / $4.352.000 /
+2023-12-20; `CO1.PCCNTR.5687227` → FUERZA AEROESPACIAL COLOMBIANA /
+AREIZA PRIMOS S.A.S / $32.800.985 / 2023-12-26).
+
+El portal interactivo `community.secop.gov.co` (donde apuntan los enlaces
+`urlproceso` que ve un usuario final) está protegido con reCAPTCHA y no
+es accesible de forma automatizada — intencionalmente no se intentó
+evadir esa protección. La verificación anterior confirma en cambio que
+los datos coinciden con la fuente abierta oficial que alimenta tanto
+este mart como, en última instancia, ese mismo portal.

@@ -1,32 +1,73 @@
-# React + TypeScript + Vite
+# Dashboard — Radar de Riesgo de Corrupción
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+React 19 + TypeScript + Vite + Tailwind v4. Cuatro vistas (Panorama, Casos prioritarios,
+Detalle de caso, Metodología) consumiendo los artefactos JSON descritos en PLAN.md ("Web
+artifact contract"). Ver el [README de la raíz](../README.md) para el runbook completo
+(refrescar datos → reconstruir → desplegar).
 
-Currently, two official plugins are available:
+## Datos: fixtures vs. datos reales
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+`web/public/data/` (ignorado por git, lo genera el pipeline vía `make export`) es lo que la
+app sirve en tiempo de ejecución. `web/public/data/` **no existe** en un clon nuevo hasta que
+corres el pipeline — así que `scripts/seed-fixtures.mjs` copia automáticamente
+`web/src/fixtures/` (comprometido a git: 50 contratos sintéticos, los 33 departamentos reales
+de Colombia, casos que cubren los 4 niveles de riesgo) a `public/data/` antes de `npm run dev`
+o `npm run build`, **solo si `public/data/meta.json` no existe todavía** — nunca sobrescribe
+datos reales ya generados.
 
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+Para regenerar los fixtures (si cambia el esquema de algún artefacto):
+```bash
+cd ../pipeline && uv run python -m pipeline.export.build_fixtures
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+## Desarrollo
+
+```bash
+npm install
+npm run dev       # http://localhost:5173
+```
+
+`react-simple-maps@3.0.0` aún no publica un rango de peer-dependency compatible con React 19
+(funciona bien en la práctica) — por eso `.npmrc` fija `legacy-peer-deps=true`; sin eso,
+`npm install` falla con ERESOLVE en un clon nuevo.
+
+## Build de producción
+
+```bash
+npm run build     # tsc -b && vite build -> dist/
+npm run preview   # sirve dist/ localmente
+```
+
+Para GitHub Pages (sitio de proyecto, no en la raíz del dominio) hay que pasar `--base`:
+```bash
+npm run build -- --base=/nombre-del-repo/
+```
+(el workflow en `.github/workflows/deploy-gh-pages.yml` ya lo hace automáticamente).
+
+## Estructura
+
+```
+web/src/
+├── types/artifacts.ts      # tipos TS espejo de pipeline/src/pipeline/export/schemas/*.schema.json
+├── lib/
+│   ├── data.ts              # fetch + cache de los JSON en /data/
+│   ├── hooks.ts              # useAsyncData, useCasosPrioritarios (carga progresiva de chunks)
+│   ├── tier.ts               # paleta de riesgo (única fuente de verdad: verde/amarillo/naranja/rojo)
+│   ├── format.ts             # formato es-CO (moneda, fechas, porcentajes)
+│   ├── evidence.ts           # traduce la evidencia de cada bandera (F01-F14) a texto legible
+│   └── cn.ts                 # clsx + tailwind-merge
+├── components/                # TierBadge, KpiCard, ColombiaMap, Layout, StateViews
+└── pages/                     # Panorama, Departamento, CasosPrioritarios, CasoDetalle, Metodologia
+```
+
+## Mapa de Colombia
+
+`public/colombia-departamentos.geojson`: límites departamentales oficiales (DANE, Marco
+Geoestadístico Nacional), simplificados a 4 decimales. `properties.cod_dpto` es el código
+DIVIPOLA de 2 dígitos, la misma clave usada en `resumen_nacional.json`.
+
+## Linting
+
+```bash
+npm run lint      # oxlint
+```

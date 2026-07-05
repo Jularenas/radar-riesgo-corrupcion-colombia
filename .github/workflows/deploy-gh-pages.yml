@@ -1,0 +1,82 @@
+name: Deploy to GitHub Pages
+
+# Manual by default: a full-data refresh (mode=full) means re-pulling ~14M+
+# rows from datos.gov.co and can take HOURS (see Makefile's pull-full target).
+# mode=sample (the default) pulls only the 2023 sample and completes in
+# minutes -- PLAN.md's "CI-friendly smoke path". For a real production
+# refresh, either run this manually with mode=full and let it finish, or
+# uncomment the schedule below for an unattended monthly refresh.
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "Data mode: 'sample' (minutes, 2023 only) or 'full' (hours, complete history)"
+        type: choice
+        options: [sample, full]
+        default: sample
+  # schedule:
+  #   - cron: "0 6 1 * *"  # 06:00 UTC on the 1st of each month, mode=full
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      MODE: ${{ inputs.mode || 'full' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python + uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          python-version: "3.12"
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Run pipeline (pull -> marts -> rues -> flags -> score -> export)
+        run: |
+          if [ "$MODE" = "full" ]; then
+            echo "::notice::Full data refresh requested -- this pulls the complete SECOP II history and can take hours."
+          fi
+          make pull
+          if [ "$MODE" = "full" ]; then make pull-full; else make pull-sample; fi
+          make marts MODE=$MODE
+          make rues-coverage
+          make flags
+          make score
+          make export
+        env:
+          SOCRATA_APP_TOKEN: ${{ secrets.SOCRATA_APP_TOKEN }}
+
+      - name: Build web app (GitHub Pages project-site base path)
+        working-directory: web
+        run: |
+          npm install
+          npm run build -- --base=/${{ github.event.repository.name }}/
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: web/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

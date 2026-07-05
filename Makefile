@@ -55,4 +55,21 @@ export:
 export-fixtures:
 	cd pipeline && uv run python -m pipeline.export.build_fixtures
 
-all: pull marts rues-coverage flags score export web
+# Full pipeline, fresh-clone-safe. Default (no MODE) pulls only the 2023
+# sample of S1/S2 and builds marts from it -- completes in minutes, the
+# CI-friendly smoke path from PLAN.md's Verification section. `make all
+# MODE=full` pulls the complete multi-year S1/S2 history instead (hours,
+# resumable) and builds marts from that -- the real production run.
+all:
+	$(MAKE) pull
+	@if [ "$(MODE)" = "full" ]; then \
+		$(MAKE) pull-full; \
+	else \
+		$(MAKE) pull-sample; \
+	fi
+	$(MAKE) marts MODE=$(MODE)
+	$(MAKE) rues-coverage
+	$(MAKE) flags
+	$(MAKE) score
+	$(MAKE) export
+	$(MAKE) web

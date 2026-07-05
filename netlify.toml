@@ -1,0 +1,12 @@
+[build]
+  base = "web"
+  command = "npm run build"
+  publish = "dist"
+
+# SPA fallback: client-side routes (e.g. /casos/123) must resolve to
+# index.html. Netlify checks for a matching static file first, so this
+# does not shadow /data/*.json or other real assets.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
