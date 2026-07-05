@@ -7,7 +7,7 @@ uv run python -m pipeline.clean.rues_coverage
 This file always reflects whatever `part-*.parquet` files are currently on disk for
 `e1_rues_ibague` / `e1_rues_santarosa` — it is a live measurement, not a one-time snapshot.
 
-**Generated:** 2026-07-04T20:53:59+00:00  
+**Generated:** 2026-07-05T20:29:29+00:00  
 **Mart:** `/Users/ext-julian.arenas/Documents/corruption/pipeline/data/marts/corruption.duckdb`
 
 ## 1. Source completeness
@@ -15,14 +15,7 @@ This file always reflects whatever `part-*.parquet` files are currently on disk 
 | Source | Dataset ID | Rows on disk now | Known live total | % of live total | Pull status |
 |--------|-----------|------------------:|------------------:|-----------------:|-------------|
 | e1_rues_ibague | `gwqv-sqvs` | 90,937 | 90,937 | 100.0% | complete |
-| e1_rues_santarosa | `c82u-588k` | 2,350,000 | 9,293,659 | 25.3% | in_progress |
-
-> **e1_rues_santarosa is a partial snapshot.** Per its own dataset metadata it syncs the
-> *national* RUES registry (not just the Santa Rosa de Cabal chamber), so it is the dominant
-> coverage driver, and a background pull was still appending part files when this report was
-> generated. All match-rate numbers below are therefore a **lower bound**: they will only ever
-> go up as more of the national registry lands on disk. Re-run the command above once the pull
-> reaches `status: complete` in `data/raw/manifest.json` for an updated (and final) number.
+| e1_rues_santarosa | `c82u-588k` | 9,356,336 | 9,324,004 | 100.3% | complete |
 
 ## 2. Match rate — dim_proveedor -> fecha_matricula
 
@@ -32,24 +25,24 @@ of small suppliers matched:
 
 | Metric | Matched | Total | Match rate |
 |--------|--------:|------:|-----------:|
-| Distinct suppliers (simple %) | 6,082 | 233,654 | 2.6% |
-| Contract value (value-weighted %) | 8,450,036,323,644 COP | 249,232,948,502,210 COP | 3.4% |
+| Distinct suppliers (simple %) | 119,609 | 1,184,898 | 10.1% |
+| Contract value (value-weighted %) | 555,661,177,077,301 COP | 995,697,638,386,825 COP | 55.8% |
 
 ### 2.1 Breakdown by supplier type (dim_proveedor.es_persona_natural heuristic)
 
 | Tipo | Suppliers matched / total | Match rate (suppliers) | Value matched / total (COP) | Match rate (value) |
 |------|---------------------------:|------------------------:|------------------------------:|--------------------:|
-| Persona juridica | 1,026 / 20,866 | 4.9% | 8,089,159,682,106 / 241,009,328,731,015 | 3.4% |
-| Persona natural | 5,044 / 212,504 | 2.4% | 359,519,549,588 / 8,071,081,444,050 | 4.5% |
-| Desconocido (heuristica ambigua) | 12 / 284 | 4.2% | 1,357,091,950 / 152,538,327,145 | 0.9% |
+| Persona juridica | 61,298 / 101,260 | 60.5% | 535,714,179,457,755 / 822,356,601,602,321 | 65.1% |
+| Persona natural | 57,752 / 1,080,696 | 5.3% | 19,636,473,538,076 / 169,976,139,428,681 | 11.6% |
+| Desconocido (heuristica ambigua) | 559 / 2,942 | 19.0% | 310,524,081,470 / 3,364,897,355,823 | 9.2% |
 
 ## 3. Match quality notes
 
-- **Cross-source conflicts:** 1,796 NITs matched in *both* e1_rues_ibague and
+- **Cross-source conflicts:** 7,200 NITs matched in *both* e1_rues_ibague and
   e1_rues_santarosa with disagreeing dates. Resolution: earliest date kept (see
   `pipeline/src/pipeline/clean/enrich_rues.py` module docstring for the full policy).
 - **Multi-registration suppliers:** 29 NITs in e1_rues_ibague and
-  56,889 in e1_rues_santarosa have more than one historical
+  692,278 in e1_rues_santarosa have more than one historical
   registration row under the same document number (most commonly a persona natural who has
   registered multiple separate commercial activities over the years). We keep the earliest
   registration per document per source — a deliberate, conservative choice: it avoids
