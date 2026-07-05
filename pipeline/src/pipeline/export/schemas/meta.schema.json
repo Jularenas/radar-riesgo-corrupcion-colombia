@@ -1,0 +1,170 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "meta.schema.json",
+  "title": "meta.json",
+  "description": "Build metadata, flag catalog, tier thresholds, backtest summary for the Métodología page.",
+  "type": "object",
+  "required": ["generado_en", "version", "banderas", "niveles_riesgo", "formula_score", "shrinkage", "backtest", "artefactos"],
+  "additionalProperties": false,
+  "properties": {
+    "generado_en": { "type": "string", "format": "date-time" },
+    "version": {
+      "type": "object",
+      "required": ["git_commit"],
+      "additionalProperties": false,
+      "properties": {
+        "git_commit": { "type": ["string", "null"] }
+      }
+    },
+    "banderas": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "nombre", "nivel", "peso", "descripcion"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string", "pattern": "^F[0-9]{2}$" },
+          "nombre": { "type": "string", "minLength": 1 },
+          "nivel": { "type": "string", "enum": ["contract", "entity"] },
+          "peso": { "type": "number" },
+          "descripcion": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "niveles_riesgo": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "nombre", "min_score", "max_score"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string", "enum": ["bajo", "medio", "alto", "critico"] },
+          "nombre": { "type": "string" },
+          "min_score": { "type": "number" },
+          "max_score": { "type": ["number", "null"] }
+        }
+      }
+    },
+    "formula_score": { "type": "string", "minLength": 1 },
+    "shrinkage": {
+      "type": "object",
+      "required": ["k", "min_contratos_rank"],
+      "additionalProperties": false,
+      "properties": {
+        "k": { "type": "number" },
+        "min_contratos_rank": { "type": "integer" }
+      }
+    },
+    "backtest": {
+      "type": "object",
+      "required": [
+        "auc_roc", "objetivo_auc_roc", "lift_top_decil", "objetivo_lift_top_decil",
+        "cumple_objetivos", "n_contratos_evaluados", "n_positivos_l1_l4",
+        "precision_top_1pct", "precision_top_5pct", "precision_top_10pct",
+        "casos_emblematicos", "n_casos_emblematicos_total",
+        "n_casos_emblematicos_con_coincidencias_genuinas",
+        "n_casos_emblematicos_en_percentil_superior",
+        "monitor_ciudadano", "resumen"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "auc_roc": { "type": ["number", "null"] },
+        "objetivo_auc_roc": { "type": "number" },
+        "lift_top_decil": { "type": ["number", "null"] },
+        "objetivo_lift_top_decil": { "type": "number" },
+        "cumple_objetivos": { "type": "boolean" },
+        "n_contratos_evaluados": { "type": "integer", "minimum": 0 },
+        "n_positivos_l1_l4": { "type": "integer", "minimum": 0 },
+        "precision_top_1pct": { "type": ["number", "null"] },
+        "precision_top_5pct": { "type": ["number", "null"] },
+        "precision_top_10pct": { "type": ["number", "null"] },
+        "casos_emblematicos": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "slug", "nombre", "periodo", "n_matched", "mejor_score", "mejor_tier",
+              "percentil_anio", "cuartil_superior", "confirmado_manualmente"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "slug": { "type": "string" },
+              "nombre": { "type": "string" },
+              "periodo": {
+                "type": "array", "items": { "type": "integer" }, "minItems": 2, "maxItems": 2
+              },
+              "n_matched": { "type": "integer", "minimum": 0 },
+              "mejor_score": { "type": ["number", "null"] },
+              "mejor_tier": { "type": ["string", "null"] },
+              "percentil_anio": { "type": ["number", "null"] },
+              "cuartil_superior": { "type": ["boolean", "null"] },
+              "confirmado_manualmente": { "type": "boolean" }
+            }
+          }
+        },
+        "n_casos_emblematicos_total": { "type": "integer", "minimum": 0 },
+        "n_casos_emblematicos_con_coincidencias_genuinas": { "type": "integer", "minimum": 0 },
+        "n_casos_emblematicos_en_percentil_superior": { "type": "integer", "minimum": 0 },
+        "monitor_ciudadano": {
+          "type": "object",
+          "required": ["n_total", "n_matched", "match_rate_pct", "nota"],
+          "additionalProperties": false,
+          "properties": {
+            "n_total": { "type": "integer", "minimum": 0 },
+            "n_matched": { "type": "integer", "minimum": 0 },
+            "match_rate_pct": { "type": ["number", "null"] },
+            "nota": { "type": "string" }
+          }
+        },
+        "resumen": { "type": "string", "minLength": 1 }
+      }
+    },
+    "artefactos": {
+      "type": "object",
+      "required": ["casos_prioritarios", "entidades_top", "proveedores_top", "departamentos"],
+      "additionalProperties": false,
+      "properties": {
+        "casos_prioritarios": {
+          "type": "object",
+          "required": ["top_n", "chunk_size", "n_chunks", "patron_archivo"],
+          "additionalProperties": false,
+          "properties": {
+            "top_n": { "type": "integer" },
+            "chunk_size": { "type": "integer" },
+            "n_chunks": { "type": "integer" },
+            "patron_archivo": { "type": "string" }
+          }
+        },
+        "entidades_top": {
+          "type": "object",
+          "required": ["top_n", "criterio"],
+          "additionalProperties": false,
+          "properties": {
+            "top_n": { "type": "integer" },
+            "criterio": { "type": "string" }
+          }
+        },
+        "proveedores_top": {
+          "type": "object",
+          "required": ["top_n", "criterio"],
+          "additionalProperties": false,
+          "properties": {
+            "top_n": { "type": "integer" },
+            "criterio": { "type": "string" }
+          }
+        },
+        "departamentos": {
+          "type": "object",
+          "required": ["patron_archivo", "top_n_entidades_por_departamento"],
+          "additionalProperties": false,
+          "properties": {
+            "patron_archivo": { "type": "string" },
+            "top_n_entidades_por_departamento": { "type": "integer" }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,93 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "departamento.schema.json",
+  "title": "departamentos/{cod_dpto}.json",
+  "description": "Department detail: municipal scores, top entities, yearly time series.",
+  "type": "object",
+  "required": [
+    "cod_dpto", "dpto", "n_contratos", "valor_total", "score_promedio",
+    "n_bajo", "n_medio", "n_alto", "n_criticos", "municipios", "top_entidades", "serie_anio"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "cod_dpto": { "type": "string", "pattern": "^[0-9]{2}$" },
+    "dpto": { "type": ["string", "null"] },
+    "n_contratos": { "type": "integer", "minimum": 0 },
+    "valor_total": { "type": "number", "minimum": 0 },
+    "score_promedio": { "type": ["number", "null"] },
+    "n_bajo": { "type": "integer", "minimum": 0 },
+    "n_medio": { "type": "integer", "minimum": 0 },
+    "n_alto": { "type": "integer", "minimum": 0 },
+    "n_criticos": { "type": "integer", "minimum": 0 },
+    "municipios": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["cod_mpio", "municipio", "n_contratos", "valor_total", "score", "tier", "datos_insuficientes"],
+        "additionalProperties": false,
+        "properties": {
+          "cod_mpio": { "type": "string", "pattern": "^[0-9]{5}$" },
+          "municipio": { "type": ["string", "null"] },
+          "n_contratos": { "type": "integer", "minimum": 0 },
+          "valor_total": { "type": "number", "minimum": 0 },
+          "score": { "type": ["number", "null"] },
+          "tier": { "type": ["string", "null"], "enum": ["bajo", "medio", "alto", "critico", null] },
+          "datos_insuficientes": { "type": "boolean" }
+        }
+      }
+    },
+    "top_entidades": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/entidad_row" }
+    },
+    "serie_anio": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["anio", "n_contratos", "valor_total", "score_promedio"],
+        "additionalProperties": false,
+        "properties": {
+          "anio": { "type": "integer" },
+          "n_contratos": { "type": "integer", "minimum": 0 },
+          "valor_total": { "type": "number", "minimum": 0 },
+          "score_promedio": { "type": ["number", "null"] }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "bandera_evidencia": {
+      "type": "object",
+      "required": ["flag_id", "nombre", "peso", "evidence"],
+      "additionalProperties": false,
+      "properties": {
+        "flag_id": { "type": "string", "pattern": "^F[0-9]{2}$" },
+        "nombre": { "type": "string" },
+        "peso": { "type": "number" },
+        "evidence": { "type": "object" }
+      }
+    },
+    "entidad_row": {
+      "type": "object",
+      "required": [
+        "nit_entidad", "nombre_entidad", "cod_dpto", "dpto", "n_contratos", "valor_total",
+        "score", "tier", "datos_insuficientes", "n_flags_aplicables", "n_flags_disparados", "banderas"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "nit_entidad": { "type": "string" },
+        "nombre_entidad": { "type": ["string", "null"] },
+        "cod_dpto": { "type": ["string", "null"], "pattern": "^([0-9]{2})?$" },
+        "dpto": { "type": ["string", "null"] },
+        "n_contratos": { "type": "integer", "minimum": 0 },
+        "valor_total": { "type": ["number", "null"] },
+        "score": { "type": ["number", "null"] },
+        "tier": { "type": ["string", "null"], "enum": ["bajo", "medio", "alto", "critico", null] },
+        "datos_insuficientes": { "type": "boolean" },
+        "n_flags_aplicables": { "type": "integer", "minimum": 0 },
+        "n_flags_disparados": { "type": "integer", "minimum": 0 },
+        "banderas": { "type": "array", "items": { "$ref": "#/$defs/bandera_evidencia" } }
+      }
+    }
+  }
+}

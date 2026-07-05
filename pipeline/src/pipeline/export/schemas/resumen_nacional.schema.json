@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "resumen_nacional.schema.json",
+  "title": "resumen_nacional.json",
+  "description": "National KPIs, year x modalidad series, per-department choropleth aggregates.",
+  "type": "object",
+  "required": ["generado_en", "kpis", "serie_anio_modalidad", "departamentos"],
+  "additionalProperties": false,
+  "properties": {
+    "generado_en": { "type": "string", "format": "date-time" },
+    "kpis": {
+      "type": "object",
+      "required": [
+        "contratos_analizados", "valor_total_cop", "casos_criticos", "pct_contratacion_directa",
+        "n_entidades", "n_proveedores", "n_contratos_sin_departamento", "pct_geolocalizado"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "contratos_analizados": { "type": "integer", "minimum": 0 },
+        "valor_total_cop": { "type": "number", "minimum": 0 },
+        "casos_criticos": { "type": "integer", "minimum": 0 },
+        "pct_contratacion_directa": { "type": "number", "minimum": 0, "maximum": 100 },
+        "n_entidades": { "type": "integer", "minimum": 0 },
+        "n_proveedores": { "type": "integer", "minimum": 0 },
+        "n_contratos_sin_departamento": { "type": "integer", "minimum": 0 },
+        "pct_geolocalizado": { "type": "number", "minimum": 0, "maximum": 100 }
+      }
+    },
+    "serie_anio_modalidad": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["anio", "modalidad", "n_contratos", "valor_total"],
+        "additionalProperties": false,
+        "properties": {
+          "anio": { "type": "integer" },
+          "modalidad": { "type": "string" },
+          "n_contratos": { "type": "integer", "minimum": 0 },
+          "valor_total": { "type": "number", "minimum": 0 }
+        }
+      }
+    },
+    "departamentos": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "cod_dpto", "dpto", "n_contratos", "valor_total", "score_promedio",
+          "n_bajo", "n_medio", "n_alto", "n_criticos"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "cod_dpto": { "type": "string", "pattern": "^[0-9]{2}$" },
+          "dpto": { "type": ["string", "null"] },
+          "n_contratos": { "type": "integer", "minimum": 0 },
+          "valor_total": { "type": "number", "minimum": 0 },
+          "score_promedio": { "type": ["number", "null"] },
+          "n_bajo": { "type": "integer", "minimum": 0 },
+          "n_medio": { "type": "integer", "minimum": 0 },
+          "n_alto": { "type": "integer", "minimum": 0 },
+          "n_criticos": { "type": "integer", "minimum": 0 }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "proveedores_top.schema.json",
+  "title": "proveedores_top.json",
+  "description": "Top 300 suppliers by value-weighted mean of their own contrato_score, shrunk toward the national mean (M6 addition -- M5 does not define a supplier-level score table).",
+  "type": "object",
+  "required": ["n_items", "items"],
+  "additionalProperties": false,
+  "properties": {
+    "n_items": { "type": "integer", "minimum": 0 },
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "doc_proveedor", "nombre_proveedor", "es_persona_natural",
+          "n_contratos", "valor_total", "score", "tier", "datos_insuficientes"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "doc_proveedor": { "type": "string", "minLength": 1 },
+          "nombre_proveedor": { "type": ["string", "null"] },
+          "es_persona_natural": { "type": ["boolean", "null"] },
+          "n_contratos": { "type": "integer", "minimum": 0 },
+          "valor_total": { "type": ["number", "null"] },
+          "score": { "type": ["number", "null"] },
+          "tier": { "type": ["string", "null"], "enum": ["bajo", "medio", "alto", "critico", null] },
+          "datos_insuficientes": { "type": "boolean" }
+        }
+      }
+    }
+  }
+}

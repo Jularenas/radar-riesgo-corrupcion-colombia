@@ -1,7 +1,7 @@
 # Radar de Riesgo de Corrupcion -- Colombia
 # Compatible with GNU Make 3.81 (POSIX, no GNU-4-only features)
 
-.PHONY: check web pull pull-sample pull-full marts rues-coverage flags score export all
+.PHONY: check web pull pull-sample pull-full marts rues-coverage flags score export export-fixtures all
 
 check:
 	cd pipeline && uv run ruff check . && uv run pytest -q
@@ -46,7 +46,13 @@ score:
 	cd pipeline && uv run python -m pipeline.score.scorer
 	cd pipeline && uv run python -m pipeline.score.backtest
 
+# M6: build web/public/data/ artifacts from corruption.duckdb (schema-validated)
 export:
-	@echo "TODO (M6)"
+	cd pipeline && uv run python -m pipeline.export.build_artifacts
+
+# M6: regenerate the small synthetic dataset at web/src/fixtures/ (committed to
+# git) so the M7 dashboard can be built/tested without running the real pipeline
+export-fixtures:
+	cd pipeline && uv run python -m pipeline.export.build_fixtures
 
 all: pull marts rues-coverage flags score export web

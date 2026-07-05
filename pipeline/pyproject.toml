@@ -10,6 +10,7 @@ dependencies = [
     "python-dotenv",
     "tenacity",
     "openpyxl",
+    "jsonschema",
 ]
 
 [project.optional-dependencies]

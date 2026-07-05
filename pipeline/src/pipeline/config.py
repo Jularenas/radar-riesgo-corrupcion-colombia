@@ -43,3 +43,16 @@ RAW_DIR = DATA_DIR / "raw"
 STAGING_DIR = DATA_DIR / "staging"
 MARTS_DIR = DATA_DIR / "marts"
 EXPORT_DIR = DATA_DIR / "export"
+
+# ---------------------------------------------------------------------------
+# Web app paths (M6 export) -- resolved relative to the repo root (one level
+# up from pipeline/), since the web app is a sibling project, not nested
+# under pipeline/. Single source of truth so export modules don't each
+# re-derive their own `Path(__file__).resolve().parents[N]` arithmetic (see
+# clean/rues_coverage.py's comment about the path-resolution bugs that caused
+# in earlier milestones).
+# ---------------------------------------------------------------------------
+
+REPO_ROOT = _PIPELINE_ROOT.parent
+WEB_PUBLIC_DATA_DIR = REPO_ROOT / "web" / "public" / "data"  # pipeline-generated artifacts (gitignored)
+WEB_FIXTURES_DIR = REPO_ROOT / "web" / "src" / "fixtures"  # synthetic dev fixtures (committed to git)
