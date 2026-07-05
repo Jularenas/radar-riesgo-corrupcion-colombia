@@ -43,7 +43,8 @@ flags:
 	cd pipeline && uv run python -m pipeline.flags.run_all
 
 score:
-	@echo "TODO (M5)"
+	cd pipeline && uv run python -m pipeline.score.scorer
+	cd pipeline && uv run python -m pipeline.score.backtest
 
 export:
 	@echo "TODO (M6)"

@@ -1,34 +1,29 @@
 """
 Shared constants for red-flag detection (M3).
 
-Single source of truth for thresholds and weights so they are not scattered
-as magic numbers across the 14 flag modules. Weights and Spanish names come
-from the "Red-flag catalog (v1)" table in PLAN.md.
+Single source of truth for thresholds so they are not scattered as magic
+numbers across the 14 flag modules. Weights and Spanish names come from the
+"Red-flag catalog (v1)" table in PLAN.md, and are canonically defined in
+`score/weights.yaml` (M5) -- see that file's module docstring
+(`pipeline.score.weights`) for why weights live there instead of here.
 """
 
 from __future__ import annotations
+
+from pipeline.score.weights import FLAG_WEIGHTS as _FLAG_WEIGHTS
 
 # ---------------------------------------------------------------------------
 # Flag registry: id -> (nombre ES, nivel, peso)
 # ---------------------------------------------------------------------------
 # nivel: "contract" -> written to flag_contrato (key = id_contrato)
 #        "entity"   -> written to flag_entidad  (key = nit_entidad_norm)
-
+#
+# Derived from score/weights.yaml (single source of truth) rather than
+# hardcoded here a second time -- do NOT edit a "peso" in this dict; edit
+# weights.yaml instead, both this module and the scorer read it from there.
 FLAG_META: dict[str, dict] = {
-    "F01": {"nombre": "Único oferente", "nivel": "contract", "peso": 15},
-    "F02": {"nombre": "Empresa exprés", "nivel": "contract", "peso": 15},
-    "F03": {"nombre": "Adiciones excesivas", "nivel": "contract", "peso": 12},
-    "F04": {"nombre": "Abuso de contratación directa", "nivel": "entity", "peso": 8},
-    "F05": {"nombre": "Fraccionamiento", "nivel": "contract", "peso": 12},
-    "F06": {"nombre": "Carrusel", "nivel": "contract", "peso": 12},
-    "F07": {"nombre": "Ventana de licitación corta", "nivel": "contract", "peso": 8},
-    "F08": {"nombre": "Precio calcado", "nivel": "contract", "peso": 6},
-    "F09": {"nombre": "Afán de diciembre", "nivel": "contract", "peso": 4},
-    "F10": {"nombre": "Ventana electoral", "nivel": "contract", "peso": 6},
-    "F11": {"nombre": "Proveedor sancionado", "nivel": "contract", "peso": 20},
-    "F12": {"nombre": "Concentración/dependencia", "nivel": "entity", "peso": 8},
-    "F13": {"nombre": "Objeto vago", "nivel": "contract", "peso": 3},
-    "F14": {"nombre": "Valor redondo", "nivel": "contract", "peso": 2},
+    fid: {"nombre": meta["nombre"], "nivel": meta["nivel"], "peso": meta["peso"]}
+    for fid, meta in _FLAG_WEIGHTS.items()
 }
 
 CONTRACT_FLAG_IDS = [fid for fid, m in FLAG_META.items() if m["nivel"] == "contract"]

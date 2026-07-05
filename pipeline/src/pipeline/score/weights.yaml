@@ -1,0 +1,50 @@
+# Canonical red-flag weights + score-tier thresholds -- single source of
+# truth (M5). Values mirror PLAN.md's "Red-flag catalog (v1)" table exactly.
+#
+# This file is read by:
+#   - pipeline.score.weights   (loader; scorer.py / backtest.py use it directly)
+#   - pipeline.flags.params    (FLAG_META's "peso" is derived from `flags:`
+#                                below, so flag-firing modules and the scorer
+#                                never disagree about a weight)
+#
+# Editing a weight, a tier boundary, or the shrinkage constant here is the
+# *only* place that should ever be needed -- nothing else in the codebase
+# should hardcode these numbers.
+
+flags:
+  F01: {nombre: "Único oferente",               nivel: contract, peso: 15}
+  F02: {nombre: "Empresa exprés",                nivel: contract, peso: 15}
+  F03: {nombre: "Adiciones excesivas",           nivel: contract, peso: 12}
+  F04: {nombre: "Abuso de contratación directa", nivel: entity,   peso: 8}
+  F05: {nombre: "Fraccionamiento",               nivel: contract, peso: 12}
+  F06: {nombre: "Carrusel",                      nivel: contract, peso: 12}
+  F07: {nombre: "Ventana de licitación corta",   nivel: contract, peso: 8}
+  F08: {nombre: "Precio calcado",                nivel: contract, peso: 6}
+  F09: {nombre: "Afán de diciembre",             nivel: contract, peso: 8}  # M5 backtest iteration: 4->8, see docs/METHODOLOGY.md
+  F10: {nombre: "Ventana electoral",             nivel: contract, peso: 6}
+  F11: {nombre: "Proveedor sancionado",          nivel: contract, peso: 20}
+  F12: {nombre: "Concentración/dependencia",     nivel: entity,   peso: 8}
+  F13: {nombre: "Objeto vago",                   nivel: contract, peso: 3}
+  F14: {nombre: "Valor redondo",                 nivel: contract, peso: 2}
+
+# score = 100 x sum(weights of fired flags) / sum(weights of applicable flags)
+# Tiers per PLAN.md: Bajo <20, Medio 20-40, Alto 40-60, Critico >=60.
+# min_score is inclusive; max_score is exclusive (null = open-ended, no ceiling).
+tiers:
+  - {id: bajo,    nombre: "Bajo",    min_score: 0,  max_score: 20}
+  - {id: medio,   nombre: "Medio",   min_score: 20, max_score: 40}
+  - {id: alto,    nombre: "Alto",    min_score: 40, max_score: 60}
+  - {id: critico, nombre: "Crítico", min_score: 60, max_score: null}
+
+# Empirical-Bayes shrinkage for entity/municipality aggregation:
+#   shrunk = (n / (n+k)) * own_mean + (k / (n+k)) * dept_mean
+# k=10 is chosen to coincide with PLAN.md's own "<10 contratos" cutoff for
+# the "datos_insuficientes" badge -- an entity/municipio right at that
+# boundary (n=10) gets ~50% weight on its own track record and ~50% on the
+# department, which is the natural inflection point: below it, shrinkage
+# dominates (protects against small-n noise); above it, the entity's own
+# history dominates. See docs/METHODOLOGY.md for the full rationale and the
+# observed contract-count distribution that motivated this choice.
+shrinkage:
+  k: 10
+  min_contratos_rank: 10  # entities/municipios below this get "datos_insuficientes"
