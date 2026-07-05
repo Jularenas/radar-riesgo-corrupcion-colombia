@@ -32,7 +32,7 @@
 | fct_proceso | 300,000 |
 | dim_entidad | 2,444 |
 | dim_proveedor | 233,654 |
-| monitor_ciudadano_hechos | 1,245 |
+| monitor_ciudadano_hechos | 1,243 |
 
 **Sanciones by fuente:**
 

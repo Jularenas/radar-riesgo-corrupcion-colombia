@@ -37,7 +37,7 @@ efectivamente cargado en el mart usado por este milestone
 | L4 — Antecedentes SIRI (Procuraduría) | `iaeu-rcn6` | 43.318 | `sanciones` |
 | E1 — RUES (registros de cámaras) | `c82u-588k` / `gwqv-sqvs` | 2.440.937 (parcial, en curso) | `dim_proveedor.fecha_matricula` |
 | E2 — DIVIPOLA (DANE) | `gdxc-w37w` | 1.122 municipios | geografía canónica |
-| V1 — Monitor Ciudadano (Transparencia por Colombia) | descarga manual | 1.245 | validación (ver §5.4 — actualmente inutilizable, bug documentado) |
+| V1 — Monitor Ciudadano (Transparencia por Colombia) | descarga manual | 1.243 | validación (ver §5.4 — 0% de coincidencias por desfase temporal con la muestra, no por error de extracción) |
 | V2 — Casos emblemáticos curados | `refs/known_cases.yaml` | 10 casos | validación (ver §5.3) |
 
 **El mart de este milestone es una muestra de un solo año (2023) para
@@ -421,34 +421,44 @@ en absoluto" o "está, pero no en el año correcto".
 
 ### 5.4 V1 — Monitor Ciudadano
 
-**Resultado: 0 de 1.245 casos emparejados (0,0%).** Causa raíz
-identificada por inspección directa del archivo fuente
-(`pipeline/data/raw/monitor_ciudadano/Base_de_datos_hechos_2016_2022.xlsx`,
-hoja `Hechos`): **el 100% de las filas de `monitor_ciudadano_hechos`
-tienen `departamento`/`municipio`/`sector` vacíos y `anio` nulo.** No es
-una limitación del método de emparejamiento (dept+municipio+año, sin
-`sector` porque esa columna no sobrevive al esquema canónico de
-`fct_contrato`) — es un bug de extracción preexistente en
-`pipeline/src/pipeline/clean/build.py::_build_monitor_hechos()`: la
-función trata la fila 0 del xlsx como encabezado, pero esa fila es en
-realidad el título del reporte ("Corporación Transparencia por Colombia /
-Monitor Ciudadano de la Corrupción / ..."); el encabezado real (con
-columnas `Departamento`, `Municipio`, `Año Inicial Hecho`, `Sector`, etc.)
-está en la fila (0-indexada) 16 de la hoja `Hechos`. Además, incluso
-corrigiendo el índice de fila, `Año Inicial Hecho` y `Tipo de corrupción`
-(con tilde) no coinciden con las claves sin tilde de `_HEADER_MAP`.
+**Resultado: 0 de 1.243 casos emparejados (0,0%).** Esta cifra tuvo dos
+causas distintas, encontradas y resueltas en momentos distintos:
 
-Este bug está **fuera del alcance de M5** (M5 no reconstruye marts —
-instrucción explícita del milestone) y se reportó por separado como una
-tarea de seguimiento con el diagnóstico completo (archivo, función, número
-de fila exacto). La lógica de emparejamiento en
+**Bug de extracción (corregido).** La inspección inicial encontró que
+`pipeline/src/pipeline/clean/build.py::_build_monitor_hechos()` trataba la
+fila 0 del xlsx como encabezado, cuando en realidad esa fila es el título
+del reporte ("Corporación Transparencia por Colombia / Monitor Ciudadano
+de la Corrupción / ..."); el encabezado real (`Departamento`, `Municipio`,
+`Año Inicial Hecho`, `Tipo de corrupción`, `Sector`, etc.) está en la fila
+16 de la hoja `Hechos`. Esto hacía que el 100% de las filas quedaran con
+`departamento`/`municipio`/`sector` vacíos y `anio` nulo. **Corregido**:
+el encabezado ahora se localiza por contenido (buscando la celda
+`"Departamento"`) en vez de un índice de fila fijo, y `_HEADER_MAP` usa
+claves sin tilde (vía el `strip_accents()` ya existente en
+`normalize.py`) para que `Año Inicial Hecho` y `Tipo de corrupción`
+mapeen correctamente. Tras la corrección, 1.242/1.243 filas tienen
+`departamento` no vacío — la extracción funciona.
+
+**Desfase temporal (causa raíz real, no corregible en M5).** Aun con la
+extracción corregida, el emparejamiento sigue en 0%: `monitor_ciudadano_hechos.anio`
+cubre 1995–2022 (consistente con el título del dataset, "Radiografía
+2016–2022", más hechos históricos anteriores), mientras que la muestra
+actual de `fct_contrato` es **exclusivamente 2023** (muestra de un solo
+año, por diseño de M1/M2). No existe ningún año en común entre ambas
+tablas, así que ninguna coincidencia dept+municipio+año es posible
+independientemente de la calidad del emparejamiento — es la misma
+limitación estructural que afecta a 6 de los 10 casos emblemáticos en
+§5.3. Este dataset debería producir coincidencias reales una vez M8
+reconstruya los marts sobre los datos completos multi-año (`s1_secop2_contratos`/
+`s2_secop2_procesos` ya están 100% descargados; ver PLAN.md).
+
+La lógica de emparejamiento en
 `pipeline/src/pipeline/score/backtest.py::match_monitor_ciudadano()` está
 completamente implementada y probada con datos sintéticos limpios
-(`tests/test_score/test_backtest.py::TestMonitorCiudadanoMatching`) —
-funcionará en cuanto se corrija la extracción, sin cambios en M5.
-Deliberadamente **no se forzaron coincidencias débiles** para maquillar
-esta cifra, siguiendo la instrucción explícita de documentar
-honestamente las limitaciones de este dataset.
+(`tests/test_score/test_backtest.py::TestMonitorCiudadanoMatching`).
+Deliberadamente **no se forzaron coincidencias débiles** (p. ej. ignorar
+el año) para maquillar esta cifra, siguiendo la instrucción explícita de
+documentar honestamente las limitaciones de este dataset.
 
 ## 6. Limitaciones (honestas)
 
@@ -498,8 +508,11 @@ honestamente las limitaciones de este dataset.
    valor + shrinkage), no un error, pero significa que en esta muestra
    particular el nivel Alto/Crítico solo es informativo a nivel de
    contrato individual, no de entidad/municipio.
-8. **V1 Monitor Ciudadano es inutilizable en este mart** por un bug de
-   extracción preexistente (§5.4), reportado por separado.
+8. **V1 Monitor Ciudadano da 0% de coincidencias en este mart** — no por
+   error de extracción (corregido, §5.4), sino porque el dataset
+   (1995–2022) y la muestra actual de `fct_contrato` (solo 2023) no
+   comparten ningún año. Debería mejorar tras la reconstrucción con datos
+   completos multi-año en M8.
 9. **El backtest de casos emblemáticos depende de qué se pulló en M1** —
    3 de los 6 casos marcados `secop1: true` en `known_cases.yaml` nunca
    tuvieron su slice descargado (§5.3), y de los 4 casos `secop1: false`,

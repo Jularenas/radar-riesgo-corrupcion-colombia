@@ -728,8 +728,16 @@ def build(mode: str = "sample") -> None:
 
 
 def _build_monitor_hechos(db: duckdb.DuckDBPyConnection, path: Path) -> None:
-    """Parse Monitor Ciudadano hechos xlsx and load into DuckDB."""
+    """Parse Monitor Ciudadano hechos xlsx and load into DuckDB.
+
+    The workbook opens with a multi-row title banner (merged cells, no data)
+    before the real header row — its length isn't guaranteed to be stable
+    across re-downloads, so the header row is located by content (a cell
+    reading "Departamento") rather than a hardcoded row index.
+    """
     import openpyxl
+
+    from pipeline.clean.normalize import strip_accents
 
     wb = openpyxl.load_workbook(path, read_only=True, data_only=True)
     ws = wb.active
@@ -744,15 +752,22 @@ def _build_monitor_hechos(db: duckdb.DuckDBPyConnection, path: Path) -> None:
         """)
         return
 
-    # First row = headers
-    headers = [str(h).strip().lower().replace(" ", "_") if h is not None else f"col_{i}"
-               for i, h in enumerate(rows[0])]
+    def _norm_header(h: object) -> str:
+        s = strip_accents(str(h).strip().lower()) if h is not None else ""
+        return s.replace(" ", "_").strip("_")
 
-    # Map to canonical names
+    header_idx = next(
+        (i for i, row in enumerate(rows)
+         if any(_norm_header(c) == "departamento" for c in row)),
+        0,
+    )
+    headers = [_norm_header(h) or f"col_{i}" for i, h in enumerate(rows[header_idx])]
+
+    # Map to canonical names (keys are accent-stripped, per _norm_header above)
     _HEADER_MAP = {
         "departamento": "departamento",
         "municipio": "municipio",
-        "año": "anio",
+        "ano_inicial_hecho": "anio",
         "ano": "anio",
         "anio": "anio",
         "year": "anio",
@@ -760,9 +775,9 @@ def _build_monitor_hechos(db: duckdb.DuckDBPyConnection, path: Path) -> None:
         "tipo_corrupcion": "tipo_corrupcion",
         "tipo": "tipo_corrupcion",
         "sector": "sector",
+        "resumen": "descripcion",
         "hecho": "descripcion",
         "descripcion": "descripcion",
-        "descripción": "descripcion",
         "descripcion_del_hecho": "descripcion",
         "hecho_de_corrupcion": "descripcion",
     }
@@ -770,7 +785,7 @@ def _build_monitor_hechos(db: duckdb.DuckDBPyConnection, path: Path) -> None:
     canonical = [_HEADER_MAP.get(h, h) for h in headers]
 
     data_rows = []
-    for row in rows[1:]:
+    for row in rows[header_idx + 1:]:
         if all(v is None for v in row):
             continue
         d = dict(zip(canonical, row))
