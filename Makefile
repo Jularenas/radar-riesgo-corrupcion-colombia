@@ -1,13 +1,17 @@
 # Radar de Riesgo de Corrupcion -- Colombia
 # Compatible with GNU Make 3.81 (POSIX, no GNU-4-only features)
 
-.PHONY: check web pull pull-sample pull-full marts rues-coverage flags score export export-fixtures all
+.PHONY: check web serve pull pull-sample pull-full marts rues-coverage flags score export export-fixtures all all-serve
 
 check:
 	cd pipeline && uv run ruff check . && uv run pytest -q
 
 web:
 	cd web && npm run build
+
+# Serve the already-built web/dist/ locally (vite preview, default http://localhost:4173)
+serve:
+	cd web && npm run preview
 
 # M1: pull all small datasets + DIVIPOLA + SECOP I slices + Monitor Ciudadano
 pull:
@@ -73,3 +77,9 @@ all:
 	$(MAKE) score
 	$(MAKE) export
 	$(MAKE) web
+
+# Same as `all`, then serves the result locally. `make all-serve MODE=full`
+# for the real production data; plain `make all-serve` for the fast sample.
+all-serve:
+	$(MAKE) all MODE=$(MODE)
+	$(MAKE) serve

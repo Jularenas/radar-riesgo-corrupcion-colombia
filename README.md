@@ -121,7 +121,9 @@ make flags                          # F01–F14
 make score                          # scoring + backtest contra casos conocidos
 make export                         # JSON del dashboard (web/public/data/)
 make web                            # build de producción del dashboard
+make serve                          # sirve web/dist/ ya construido en http://localhost:4173
 make all [MODE=full]                # pipeline completo + build
+make all-serve [MODE=full]          # pipeline completo + build + servir localmente
 ```
 
 ## Aviso legal
