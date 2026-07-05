@@ -1,11 +1,15 @@
 name: Deploy to GitHub Pages
 
-# Manual by default: a full-data refresh (mode=full) means re-pulling ~14M+
-# rows from datos.gov.co and can take HOURS (see Makefile's pull-full target).
-# mode=sample (the default) pulls only the 2023 sample and completes in
-# minutes -- PLAN.md's "CI-friendly smoke path". For a real production
-# refresh, either run this manually with mode=full and let it finish, or
-# uncomment the schedule below for an unattended monthly refresh.
+# Weekly incremental refresh (schedule) + on-demand full/sample rebuild
+# (workflow_dispatch). GitHub Actions runners are ephemeral -- nothing
+# persists between runs by default -- so `pipeline/data/raw/` (the parquet
+# parts + manifest.json that `--refresh` needs to know its :updated_at
+# watermark) is cached across runs below. Without that cache, `--refresh`
+# would find no prior watermark and silently fall back to a full pull EVERY
+# week, defeating the point. The cache is best-effort (GitHub evicts caches
+# unused for 7+ days, or under total repo cache pressure); if it's ever
+# missing, `--refresh` just degrades to a one-off full pull for that dataset
+# instead of failing, so a lost cache costs time, not correctness.
 on:
   workflow_dispatch:
     inputs:
@@ -14,8 +18,8 @@ on:
         type: choice
         options: [sample, full]
         default: sample
-  # schedule:
-  #   - cron: "0 6 1 * *"  # 06:00 UTC on the 1st of each month, mode=full
+  schedule:
+    - cron: "0 8 * * 0" # 08:00 UTC Sunday = 03:00 America/Bogota -- low-traffic overnight window, past week's SECOP filings are settled by then
 
 permissions:
   contents: read
@@ -44,18 +48,41 @@ jobs:
         with:
           node-version: "22"
 
+      # Restores pipeline/data/raw/ (parquet parts + manifest.json) from the
+      # most recent previous run, if any. Always saves a fresh cache entry
+      # afterward (unique key per run, restore-keys matches the latest prior
+      # one) since this is accumulating state, not a fixed build dependency.
+      - name: Restore raw data cache
+        uses: actions/cache@v4
+        with:
+          path: pipeline/data/raw
+          key: pipeline-raw-data-${{ github.run_id }}
+          restore-keys: |
+            pipeline-raw-data-
+
       - name: Run pipeline (pull -> marts -> rues -> flags -> score -> export)
         run: |
-          if [ "$MODE" = "full" ]; then
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            echo "::notice::Scheduled weekly refresh -- incremental pull, not a full re-download."
+            make weekly
+          elif [ "$MODE" = "full" ]; then
             echo "::notice::Full data refresh requested -- this pulls the complete SECOP II history and can take hours."
+            make pull
+            make pull-full
+            make marts MODE=full
+            make rues-coverage
+            make flags
+            make score
+            make export
+          else
+            make pull
+            make pull-sample
+            make marts MODE=sample
+            make rues-coverage
+            make flags
+            make score
+            make export
           fi
-          make pull
-          if [ "$MODE" = "full" ]; then make pull-full; else make pull-sample; fi
-          make marts MODE=$MODE
-          make rues-coverage
-          make flags
-          make score
-          make export
         env:
           SOCRATA_APP_TOKEN: ${{ secrets.SOCRATA_APP_TOKEN }}
 

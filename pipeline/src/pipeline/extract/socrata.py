@@ -353,7 +353,13 @@ class SocrataClient:
         manifest[name] = entry
         _save_manifest(manifest_path, manifest)
 
-        return entry
+        # `rows_pulled_this_run` is informational only (not persisted to the
+        # manifest -- `entry["rows_pulled"]` there stays the dataset's lifetime
+        # total). Callers logging a refresh result need "how many rows changed
+        # since the watermark", not the lifetime total, or a Sunday cron log
+        # showing e.g. "5657593 rows pulled" every week regardless of whether
+        # 0 or 5000 rows actually changed would be actively misleading.
+        return {**entry, "rows_pulled_this_run": total_new_rows}
 
 
 # ---------------------------------------------------------------------------

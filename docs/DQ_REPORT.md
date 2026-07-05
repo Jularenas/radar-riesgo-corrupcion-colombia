@@ -10,8 +10,8 @@
 | Raw | S1 SECOP II Contratos | 5,657,593 |
 | Staged (dedup :id) | stg_s1 | 5,657,593 |
 | Dedup removed | S1 | 0 |
-| Raw | S2 SECOP II Procesos | 8,773,853 |
-| Staged (dedup :id) | stg_s2 | 8,773,853 |
+| Raw | S2 SECOP II Procesos | 10,623,853 |
+| Staged (dedup :id) | stg_s2 | 10,623,853 |
 | Dedup removed | S2 | 0 |
 | SECOP I slices | stg_secop1 | 527 |
 
@@ -29,7 +29,7 @@
 |------|------|
 | fct_contrato (SECOP2) | 5,248,424 |
 | fct_contrato (all sources) | 5,248,922 |
-| fct_proceso | 8,773,853 |
+| fct_proceso | 10,623,853 |
 | dim_entidad | 4,814 |
 | dim_proveedor | 1,184,898 |
 | monitor_ciudadano_hechos | 1,243 |
@@ -65,7 +65,7 @@
 ## 6. Contract↔Process Join Coverage
 
 **Join key:** `fct_contrato.proceso_de_compra` → `stg_s2.id_del_portafolio`
-**Coverage:** 100.0% (9,554,218 of 9,558,062 SECOP2 contracts)
+**Coverage:** 100.0% (11,573,023 of 11,576,867 SECOP2 contracts)
 
 > Key discovery: S1 contratos uses `proceso_de_compra` with prefix `CO1.BDOS.*`
 > while S2 uses `id_del_proceso` with prefix `CO1.REQ.*`. The join key is

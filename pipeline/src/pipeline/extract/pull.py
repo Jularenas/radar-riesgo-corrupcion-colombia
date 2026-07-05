@@ -505,7 +505,8 @@ def pull_refresh(client: SocrataClient, name: str) -> None:
         refresh=True,
     )
     log.info(
-        "Refresh done: %d rows pulled (watermark: %s)",
+        "Refresh done: %d new/changed rows since last watermark (dataset total: %d, new watermark: %s)",
+        entry.get("rows_pulled_this_run", 0),
         entry.get("rows_pulled", 0),
         entry.get("max_updated_at"),
     )

@@ -486,6 +486,61 @@ class TestIncremental:
         # Check manifest entry has refresh parts
         new_parts = [p for p in entry.get("parts", []) if "refresh" in p["file"]]
         assert new_parts, "Manifest should record refresh parts"
+        # rows_pulled_this_run must be the 100 rows fetched THIS call, not
+        # entry["rows_pulled"] (1000, the pre-seeded lifetime total + this
+        # run's 100 = 1100) -- a caller logging "N rows this refresh" needs
+        # the former, or every log line reports the dataset's lifetime size
+        # regardless of what actually changed (see socrata.py's pull_dataset
+        # docstring note added alongside this test).
+        assert entry["rows_pulled_this_run"] == 100
+        assert entry["rows_pulled"] == 1100
+
+    def test_refresh_with_zero_new_rows_reports_zero_not_lifetime_total(
+        self, tmp_raw: Path
+    ) -> None:
+        """A refresh that finds nothing new must report 0 rows_pulled_this_run,
+        not silently echo the dataset's lifetime rows_pulled (a real bug caught
+        live: datos.gov.co's jbjy-vk9h had 0 rows changed since the watermark,
+        and the pre-fix log line printed "5657593 rows pulled" -- the dataset's
+        total size -- which would make every quiet week's cron log look
+        identical to a full re-pull instead of clearly saying nothing changed)."""
+        transport = FakeTransport("ref-5678", total_rows=0, page_size=50_000)
+        manifest_path = tmp_raw / "manifest.json"
+
+        pre_manifest = {
+            "ref_ds": {
+                "dataset_id": "ref-5678",
+                "rows_pulled": 5_657_593,
+                "status": "complete",
+                "max_updated_at": "2026-07-02T07:52:43.863Z",
+                "parts": [{"file": "p0.parquet", "rows": 5_657_593, "last_id": "999"}],
+            }
+        }
+        _save_manifest(manifest_path, pre_manifest)
+
+        ds_dir = tmp_raw / "ref_ds"
+        ds_dir.mkdir()
+
+        client = SocrataClient(tmp_raw)
+        client._client = httpx.Client(
+            transport=transport,
+            base_url="https://www.datos.gov.co",
+            timeout=30,
+        )
+        try:
+            entry = client.pull_dataset(
+                dataset_id="ref-5678",
+                name="ref_ds",
+                out_dir=ds_dir,
+                manifest_path=manifest_path,
+                refresh=True,
+            )
+        finally:
+            client.close()
+
+        assert entry["rows_pulled_this_run"] == 0
+        assert entry["rows_pulled"] == 5_657_593, "Lifetime total must stay unchanged when nothing new was pulled"
+        assert not list(ds_dir.glob("part-refresh-*.parquet")), "No refresh part file should be written when 0 rows come back"
 
 
 class TestWhereClause:

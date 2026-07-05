@@ -7,7 +7,7 @@ uv run python -m pipeline.clean.rues_coverage
 This file always reflects whatever `part-*.parquet` files are currently on disk for
 `e1_rues_ibague` / `e1_rues_santarosa` — it is a live measurement, not a one-time snapshot.
 
-**Generated:** 2026-07-05T20:29:29+00:00  
+**Generated:** 2026-07-05T22:47:54+00:00  
 **Mart:** `/Users/ext-julian.arenas/Documents/corruption/pipeline/data/marts/corruption.duckdb`
 
 ## 1. Source completeness
