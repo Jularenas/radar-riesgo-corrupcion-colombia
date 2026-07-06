@@ -31,6 +31,7 @@ SCHEMA_FILES: dict[str, str] = {
     "resumen_nacional": "resumen_nacional.schema.json",
     "departamento": "departamento.schema.json",
     "casos_prioritarios_chunk": "casos_prioritarios_chunk.schema.json",
+    "contratos_recientes_chunk": "contratos_recientes_chunk.schema.json",
     "entidades_top": "entidades_top.schema.json",
     "proveedores_top": "proveedores_top.schema.json",
 }

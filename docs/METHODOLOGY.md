@@ -595,6 +595,35 @@ el año o el municipio) para inflar esta cifra.
     diseñado para eso — la mejora vino de más cobertura de datos, no de
     recalibración. Ver §7 para qué se necesitaría para cerrar la brecha
     restante de AUC.
+11. **F11 (Proveedor sancionado) — sesgo de recencia estructural, distinto
+    del sesgo de etiquetas del punto 1.** F11 exige que el proveedor tenga
+    una sanción (L1-L4) *ya publicada* con fecha anterior a la firma del
+    contrato — y una sanción fiscal/disciplinaria colombiana suele tardar
+    años en investigarse y resolverse. La tasa de disparo de F11 medida por
+    año de firma del contrato cae de forma sostenida:
+
+    | Año firma | 2016 | 2017 | 2018 | 2019 | 2020 | 2021 | 2022 | 2023 | 2024 | 2025 | 2026\* |
+    |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+    | Tasa F11 | 0,224% | 0,235% | 0,170% | 0,190% | 0,144% | 0,141% | 0,112% | 0,096% | 0,102% | 0,092% | 0,062% |
+
+    \* 2026 es un año parcial (menos tiempo transcurrido desde la firma, la
+    misma dinámica llevada al extremo).
+
+    Es la bandera de mayor peso del catálogo (20 puntos), así que este
+    declive de ~0,24% a ~0,06-0,10% no es cosmético: los contratos de los
+    últimos 2-3 años parten con una probabilidad estructuralmente menor de
+    que F11 se dispare, no porque sus proveedores sean más limpios sino
+    porque el sistema sancionatorio aún no ha tenido tiempo de pronunciarse
+    sobre ellos. Distinto del punto 1 (que describe el sesgo en las
+    *etiquetas* usadas solo para el backtest): este es un sesgo en una
+    *bandera de entrada al score mismo*, así que afecta a todo contrato
+    reciente, no solo a la validación. Mitigado parcialmente porque las
+    otras 13 banderas no dependen de sanciones publicadas — en la práctica,
+    2025 es el año con más casos en `casos_prioritarios` (594, más que
+    cualquier otro año) porque F01/F03/F07/F08/F13 sí son computables de
+    inmediato — pero cualquier lectura de por qué un contrato reciente NO
+    llegó al tope del ranking debe considerar que F11 casi nunca puede
+    ayudarlo a llegar ahí todavía.
 
 ## 7. Qué se necesitaría para cerrar la brecha de AUC restante
 

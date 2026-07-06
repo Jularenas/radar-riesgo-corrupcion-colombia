@@ -34,6 +34,7 @@ VALID_META = {
     },
     "artefactos": {
         "casos_prioritarios": {"top_n": 2500, "chunk_size": 500, "n_chunks": 1, "patron_archivo": "x"},
+        "contratos_recientes": {"top_n": 1000, "chunk_size": 500, "n_chunks": 1, "patron_archivo": "x"},
         "entidades_top": {"top_n": 300, "criterio": "x"},
         "proveedores_top": {"top_n": 300, "criterio": "x"},
         "departamentos": {"patron_archivo": "x", "top_n_entidades_por_departamento": 50},
@@ -151,7 +152,39 @@ class TestFixtures:
             con.close()
 
         assert summary["n_casos_prioritarios"] == 50
+        assert summary["n_contratos_recientes"] == 50
         assert summary["n_departamentos"] == 33
         assert (tmp_path / "meta.json").exists()
         assert (tmp_path / "resumen_nacional.json").exists()
         assert (tmp_path / "casos_prioritarios" / "000.json").exists()
+        assert (tmp_path / "contratos_recientes" / "000.json").exists()
+
+
+class TestContratosRecientes:
+    """
+    Regression coverage for a real bug caught manually: 5 legacy SECOP I rows
+    in the production mart (all pre-2000 ANI contracts) have a corrupted
+    century in fecha_firma (e.g. 1994 stored as 2094), invisible everywhere
+    else because they score ~0, but a fecha_firma-desc sort put "signed in
+    2096" at the top of the page. build_contratos_recientes must exclude any
+    fecha_firma after today, however the fixture/mart happens to be seeded.
+    """
+
+    def test_excludes_contract_with_corrupted_future_fecha_firma(self):
+        import datetime as dt
+
+        from pipeline.export.build_artifacts import build_contratos_recientes
+
+        con = build_fixture_con()
+        try:
+            con.execute("UPDATE contrato_score SET fecha_firma = DATE '2096-05-23' WHERE id_contrato = 'FIXTURE-0000'")
+            con.execute("UPDATE fct_contrato SET fecha_firma = DATE '2096-05-23' WHERE id_contrato = 'FIXTURE-0000'")
+            items = build_contratos_recientes(con)
+        finally:
+            con.close()
+
+        today_iso = dt.date.today().isoformat()
+        ids = {i["id_contrato"] for i in items}
+        assert "FIXTURE-0000" not in ids
+        assert all(i["fecha_firma"] <= today_iso for i in items)  # ISO dates compare lexicographically
+        assert len(items) == 49  # 50 fixture contracts minus the one excluded for a future date

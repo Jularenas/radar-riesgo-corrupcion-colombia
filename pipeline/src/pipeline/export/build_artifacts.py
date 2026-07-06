@@ -51,6 +51,8 @@ log = logging.getLogger(__name__)
 
 TOP_N_CASOS_PRIORITARIOS = 2500
 CHUNK_SIZE_CASOS_PRIORITARIOS = 500
+TOP_N_CONTRATOS_RECIENTES = 1000
+CHUNK_SIZE_CONTRATOS_RECIENTES = 500
 TOP_N_ENTIDADES = 300
 TOP_N_PROVEEDORES = 300
 TOP_N_ENTIDADES_POR_DEPARTAMENTO = 50
@@ -173,12 +175,20 @@ def _build_backtest_summary(con: duckdb.DuckDBPyConnection) -> dict:
     }
 
 
-def build_meta(con: duckdb.DuckDBPyConnection, *, n_casos_prioritarios: int, n_chunks: int) -> dict:
+def build_meta(
+    con: duckdb.DuckDBPyConnection,
+    *,
+    n_casos_prioritarios: int,
+    n_chunks: int,
+    n_contratos_recientes: int,
+    n_chunks_recientes: int,
+) -> dict:
     """
-    `n_casos_prioritarios`/`n_chunks` are passed in (rather than recomputed
-    from the module constants) so meta.json always reflects what `run()`
-    actually wrote -- e.g. a fixture mart with far fewer than 2500 scoreable
-    contracts produces fewer chunks, and meta.json must say so honestly.
+    `n_casos_prioritarios`/`n_chunks` (and their `_recientes` counterparts)
+    are passed in (rather than recomputed from the module constants) so
+    meta.json always reflects what `run()` actually wrote -- e.g. a fixture
+    mart with far fewer than 2500 scoreable contracts produces fewer chunks,
+    and meta.json must say so honestly.
     """
     banderas = [
         {"id": fid, "nombre": meta["nombre"], "nivel": meta["nivel"], "peso": meta["peso"], "descripcion": FLAG_DESCRIPTIONS[fid]}
@@ -203,6 +213,17 @@ def build_meta(con: duckdb.DuckDBPyConnection, *, n_casos_prioritarios: int, n_c
                     "casos_prioritarios/{idx:03d}.json, idx = 000, 001, ... -- indice secuencial de 3 "
                     f"digitos, {CHUNK_SIZE_CASOS_PRIORITARIOS} filas por archivo salvo el ultimo "
                     f"(en esta corrida: {n_casos_prioritarios} contratos en {n_chunks} archivo(s))"
+                ),
+            },
+            "contratos_recientes": {
+                "top_n": TOP_N_CONTRATOS_RECIENTES,
+                "chunk_size": CHUNK_SIZE_CONTRATOS_RECIENTES,
+                "n_chunks": n_chunks_recientes,
+                "patron_archivo": (
+                    "contratos_recientes/{idx:03d}.json, idx = 000, 001, ... -- ordenado por fecha_firma "
+                    f"desc (no por score, ver METHODOLOGY.md 6.11), {CHUNK_SIZE_CONTRATOS_RECIENTES} filas "
+                    f"por archivo salvo el ultimo (en esta corrida: {n_contratos_recientes} contratos en "
+                    f"{n_chunks_recientes} archivo(s))"
                 ),
             },
             "entidades_top": {
@@ -604,6 +625,85 @@ def build_casos_prioritarios(con: duckdb.DuckDBPyConnection, top_n: int = TOP_N_
 
 
 # ---------------------------------------------------------------------------
+# contratos_recientes/{idx}.json
+# ---------------------------------------------------------------------------
+
+def build_contratos_recientes(con: duckdb.DuckDBPyConnection, top_n: int = TOP_N_CONTRATOS_RECIENTES) -> list[dict]:
+    """
+    Top `top_n` contracts by fecha_firma (most recent first) -- independent of
+    score. `casos_prioritarios` is a score-sorted shortlist, so a contract
+    whose only applicable flags are sanction-history-based (F11, the highest
+    weight in the catalog) is structurally unlikely to rank there while its
+    signing date is still recent: sanctions take years to be investigated and
+    published, so F11's fire rate measured by contract year falls from ~0.24%
+    (2017) to ~0.06-0.10% (2023-2026) -- see docs/METHODOLOGY.md section 6,
+    point 11. This view exists so a contract signed last week is visible
+    somewhere regardless of what its (still-forming) score says.
+
+    Excludes fecha_firma > CURRENT_DATE: a handful of legacy SECOP I rows
+    (5 in the M8 full mart, all pre-2000 Agencia Nacional de Infraestructura
+    contracts, e.g. "6641994" signed 1994 stored as 2094-11-24) have a
+    corrupted century in the source data. `casos_prioritarios` never surfaces
+    them (all score <=39, well outside its top 2500), but sorting by
+    fecha_firma desc without this guard would put "signed in 2096" at the
+    very top of a page about recent activity. Excluded here only, not fixed
+    at the source (out of scope, and any single row is 0.02% of the mart --
+    not worth a broader date-sanitization pass for this alone).
+    Deterministic tie-break: fecha_firma desc, then id_contrato asc.
+    """
+    rows = con.execute(
+        f"""
+        WITH dedup AS ({_CONTRATO_DEDUP_SQL})
+        SELECT
+            cs.id_contrato, cs.nit_entidad_norm, cs.nombre_entidad, cs.doc_proveedor_norm, cs.nombre_proveedor,
+            cs.cod_dpto, dv_d.dpto, cs.cod_mpio, dv_m.municipio,
+            dedup.modalidad_norm, cs.anio, cs.valor_contrato, cs.fecha_firma, cs.source,
+            cs.score, cs.tier, cs.urlproceso, cs.n_flags_aplicables, cs.n_flags_disparados, cs.flags_disparados
+        FROM contrato_score cs
+        JOIN dedup ON dedup.id_contrato = cs.id_contrato
+        LEFT JOIN (SELECT DISTINCT cod_dpto, dpto FROM divipola) dv_d ON dv_d.cod_dpto = cs.cod_dpto
+        LEFT JOIN (SELECT DISTINCT cod_dpto, cod_mpio, municipio FROM divipola) dv_m
+            ON dv_m.cod_dpto = cs.cod_dpto AND dv_m.cod_mpio = cs.cod_mpio
+        WHERE cs.score IS NOT NULL AND cs.fecha_firma IS NOT NULL AND cs.fecha_firma <= CURRENT_DATE
+        ORDER BY cs.fecha_firma DESC, cs.id_contrato ASC
+        LIMIT {int(top_n)}
+        """  # noqa: S608 -- _CONTRATO_DEDUP_SQL/top_n are fixed constants, not user input
+    ).fetchall()
+
+    items = []
+    for (
+        id_contrato, nit_entidad, nombre_entidad, doc_proveedor, nombre_proveedor,
+        cod_dpto, dpto, cod_mpio, municipio, modalidad, anio, valor_contrato, fecha_firma, source,
+        score, tier, urlproceso, n_ap, n_di, flags_json,
+    ) in rows:
+        items.append(
+            {
+                "id_contrato": id_contrato,
+                "nit_entidad": nit_entidad,
+                "nombre_entidad": nombre_entidad,
+                "doc_proveedor": doc_proveedor,
+                "nombre_proveedor": nombre_proveedor,
+                "cod_dpto": pad_dpto(cod_dpto),
+                "dpto": dpto,
+                "cod_mpio": pad_mpio(cod_mpio),
+                "municipio": municipio,
+                "modalidad": modalidad,
+                "anio": anio,
+                "valor_contrato": valor_contrato,
+                "fecha_firma": fecha_firma.isoformat() if fecha_firma is not None else None,
+                "source": source,
+                "score": score,
+                "tier": tier,
+                "urlproceso": urlproceso,
+                "n_flags_aplicables": n_ap or 0,
+                "n_flags_disparados": n_di or 0,
+                "banderas": load_banderas(flags_json),
+            }
+        )
+    return items
+
+
+# ---------------------------------------------------------------------------
 # Size-budget enforcement
 # ---------------------------------------------------------------------------
 
@@ -656,7 +756,7 @@ def _clean_out_dir(out_dir: Path) -> None:
         return
     for p in out_dir.glob("*.json"):
         p.unlink()
-    for sub in ("departamentos", "casos_prioritarios"):
+    for sub in ("departamentos", "casos_prioritarios", "contratos_recientes"):
         sub_dir = out_dir / sub
         if sub_dir.exists():
             shutil.rmtree(sub_dir)
@@ -692,8 +792,33 @@ def run(con: duckdb.DuckDBPyConnection, out_dir: Path, *, validate: bool = True)
         write_json(out_dir / "casos_prioritarios" / f"{idx:03d}.json", payload)
     log.info("  %d contratos en %d chunk(s)", len(cp_items), len(chunks))
 
+    log.info("Fetching contratos_recientes (top %d by fecha_firma)...", TOP_N_CONTRATOS_RECIENTES)
+    cr_items = build_contratos_recientes(con, TOP_N_CONTRATOS_RECIENTES)
+    cr_chunks = chunk_list(cr_items, CHUNK_SIZE_CONTRATOS_RECIENTES)
+    if validate:
+        validate_many(
+            "contratos_recientes_chunk",
+            [
+                (
+                    {"chunk_index": idx, "n_chunks": len(cr_chunks), "n_items_total": len(cr_items), "items": chunk},
+                    f"contratos_recientes/{idx:03d}.json",
+                )
+                for idx, chunk in enumerate(cr_chunks)
+            ],
+        )
+    for idx, chunk in enumerate(cr_chunks):
+        payload = {"chunk_index": idx, "n_chunks": len(cr_chunks), "n_items_total": len(cr_items), "items": chunk}
+        write_json(out_dir / "contratos_recientes" / f"{idx:03d}.json", payload)
+    log.info("  %d contratos en %d chunk(s)", len(cr_items), len(cr_chunks))
+
     log.info("Building meta.json...")
-    meta = build_meta(con, n_casos_prioritarios=len(cp_items), n_chunks=len(chunks))
+    meta = build_meta(
+        con,
+        n_casos_prioritarios=len(cp_items),
+        n_chunks=len(chunks),
+        n_contratos_recientes=len(cr_items),
+        n_chunks_recientes=len(cr_chunks),
+    )
     if validate:
         validate_artifact("meta", meta, source="meta.json")
     write_json(out_dir / "meta.json", meta)
@@ -733,6 +858,8 @@ def run(con: duckdb.DuckDBPyConnection, out_dir: Path, *, validate: bool = True)
     return {
         "n_casos_prioritarios": len(cp_items),
         "n_chunks": len(chunks),
+        "n_contratos_recientes": len(cr_items),
+        "n_chunks_recientes": len(cr_chunks),
         "n_departamentos": len(departamentos),
         "n_entidades": len(entidades),
         "n_proveedores": len(proveedores),
@@ -744,6 +871,7 @@ def print_report(summary: dict) -> None:
     print()
     print("=== M6 export ===")
     print(f"casos_prioritarios: {summary['n_casos_prioritarios']} contratos en {summary['n_chunks']} chunk(s)")
+    print(f"contratos_recientes: {summary['n_contratos_recientes']} contratos en {summary['n_chunks_recientes']} chunk(s)")
     print(f"departamentos: {summary['n_departamentos']}")
     print(f"entidades_top: {summary['n_entidades']}")
     print(f"proveedores_top: {summary['n_proveedores']}")

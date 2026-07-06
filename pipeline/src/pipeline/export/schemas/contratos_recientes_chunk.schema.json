@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "contratos_recientes_chunk.schema.json",
+  "title": "contratos_recientes/{chunk}.json",
+  "description": "One 500-row chunk of the top-1000-most-recent-by-fecha_firma contract list (independent of score), with facts + fired flags + evidence.",
+  "type": "object",
+  "required": ["chunk_index", "n_chunks", "n_items_total", "items"],
+  "additionalProperties": false,
+  "properties": {
+    "chunk_index": { "type": "integer", "minimum": 0 },
+    "n_chunks": { "type": "integer", "minimum": 1 },
+    "n_items_total": { "type": "integer", "minimum": 0 },
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id_contrato", "nit_entidad", "nombre_entidad", "doc_proveedor", "nombre_proveedor",
+          "cod_dpto", "dpto", "cod_mpio", "municipio", "modalidad", "anio", "valor_contrato",
+          "fecha_firma", "source", "score", "tier", "urlproceso",
+          "n_flags_aplicables", "n_flags_disparados", "banderas"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "id_contrato": { "type": "string", "minLength": 1 },
+          "nit_entidad": { "type": ["string", "null"] },
+          "nombre_entidad": { "type": ["string", "null"] },
+          "doc_proveedor": { "type": ["string", "null"] },
+          "nombre_proveedor": { "type": ["string", "null"] },
+          "cod_dpto": { "type": ["string", "null"], "pattern": "^([0-9]{2})?$" },
+          "cod_mpio": { "type": ["string", "null"], "pattern": "^([0-9]{5})?$" },
+          "municipio": { "type": ["string", "null"] },
+          "dpto": { "type": ["string", "null"] },
+          "modalidad": { "type": ["string", "null"] },
+          "anio": { "type": ["integer", "null"] },
+          "valor_contrato": { "type": ["number", "null"] },
+          "fecha_firma": { "type": ["string", "null"] },
+          "source": { "type": ["string", "null"] },
+          "score": { "type": "number" },
+          "tier": { "type": "string", "enum": ["bajo", "medio", "alto", "critico"] },
+          "urlproceso": { "type": ["string", "null"] },
+          "n_flags_aplicables": { "type": "integer", "minimum": 0 },
+          "n_flags_disparados": { "type": "integer", "minimum": 0 },
+          "banderas": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["flag_id", "nombre", "peso", "evidence"],
+              "additionalProperties": false,
+              "properties": {
+                "flag_id": { "type": "string", "pattern": "^F[0-9]{2}$" },
+                "nombre": { "type": "string" },
+                "peso": { "type": "number" },
+                "evidence": { "type": "object" }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

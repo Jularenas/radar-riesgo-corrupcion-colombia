@@ -1,6 +1,6 @@
 import { useEffect, useState, type DependencyList } from "react";
-import { getCasosChunk } from "@/lib/data";
-import type { CasoPrioritario } from "@/types/artifacts";
+import { getCasosChunk, getContratosRecientesChunk } from "@/lib/data";
+import type { CasoPrioritario, ContratoReciente } from "@/types/artifacts";
 
 export interface AsyncState<T> {
   data: T | null;
@@ -35,8 +35,8 @@ export function useAsyncData<T>(loader: () => Promise<T>, deps: DependencyList):
   return state;
 }
 
-export interface CasosPrioritariosState {
-  items: CasoPrioritario[];
+export interface ChunkedListState<T> {
+  items: T[];
   loadedChunks: number;
   totalChunks: number | null;
   nItemsTotal: number | null;
@@ -44,14 +44,21 @@ export interface CasosPrioritariosState {
   error: string | null;
 }
 
+interface Chunk<T> {
+  n_chunks: number;
+  n_items_total: number;
+  items: T[];
+}
+
 /**
- * Loads casos_prioritarios chunk 0 first (fast first paint on the
- * highest-score contracts, since chunks are pre-sorted descending by score),
- * then keeps fetching subsequent chunks in the background and appends them,
- * per PLAN.md's "don't block first paint on all chunks" guidance.
+ * Loads chunk 0 of a paginated artifact first (fast first paint), then keeps
+ * fetching subsequent chunks in the background and appends them, per
+ * PLAN.md's "don't block first paint on all chunks" guidance. Shared by
+ * useCasosPrioritarios (score-sorted) and useContratosRecientes
+ * (fecha_firma-sorted) -- same pagination algorithm, different endpoint.
  */
-export function useCasosPrioritarios(): CasosPrioritariosState {
-  const [items, setItems] = useState<CasoPrioritario[]>([]);
+function useChunkedList<T>(getChunk: (idx: number) => Promise<Chunk<T>>): ChunkedListState<T> {
+  const [items, setItems] = useState<T[]>([]);
   const [loadedChunks, setLoadedChunks] = useState(0);
   const [totalChunks, setTotalChunks] = useState<number | null>(null);
   const [nItemsTotal, setNItemsTotal] = useState<number | null>(null);
@@ -66,7 +73,7 @@ export function useCasosPrioritarios(): CasosPrioritariosState {
     setError(null);
 
     async function run(): Promise<void> {
-      const first = await getCasosChunk(0);
+      const first = await getChunk(0);
       if (cancelled) return;
       setTotalChunks(first.n_chunks);
       setNItemsTotal(first.n_items_total);
@@ -74,7 +81,7 @@ export function useCasosPrioritarios(): CasosPrioritariosState {
       setLoadedChunks(1);
 
       for (let i = 1; i < first.n_chunks; i++) {
-        const chunk = await getCasosChunk(i);
+        const chunk = await getChunk(i);
         if (cancelled) return;
         setItems((prev) => [...prev, ...chunk.items]);
         setLoadedChunks((n) => n + 1);
@@ -88,8 +95,21 @@ export function useCasosPrioritarios(): CasosPrioritariosState {
     return () => {
       cancelled = true;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loading = totalChunks === null || loadedChunks < totalChunks;
   return { items, loadedChunks, totalChunks, nItemsTotal, loading, error };
+}
+
+export type CasosPrioritariosState = ChunkedListState<CasoPrioritario>;
+
+export function useCasosPrioritarios(): CasosPrioritariosState {
+  return useChunkedList(getCasosChunk);
+}
+
+export type ContratosRecientesState = ChunkedListState<ContratoReciente>;
+
+export function useContratosRecientes(): ContratosRecientesState {
+  return useChunkedList(getContratosRecientesChunk);
 }

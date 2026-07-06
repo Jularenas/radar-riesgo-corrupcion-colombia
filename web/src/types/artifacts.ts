@@ -220,6 +220,20 @@ export interface CasosPrioritariosChunk {
 }
 
 // ---------------------------------------------------------------------------
+// contratos_recientes/{idx}.json
+// ---------------------------------------------------------------------------
+
+/** Same row shape as CasoPrioritario -- ordered by fecha_firma desc instead of score desc (see METHODOLOGY.md 6.11). */
+export type ContratoReciente = CasoPrioritario;
+
+export interface ContratosRecientesChunk {
+  chunk_index: number;
+  n_chunks: number;
+  n_items_total: number;
+  items: ContratoReciente[];
+}
+
+// ---------------------------------------------------------------------------
 // entidades_top.json / proveedores_top.json
 // ---------------------------------------------------------------------------
 

@@ -123,10 +123,21 @@
     },
     "artefactos": {
       "type": "object",
-      "required": ["casos_prioritarios", "entidades_top", "proveedores_top", "departamentos"],
+      "required": ["casos_prioritarios", "contratos_recientes", "entidades_top", "proveedores_top", "departamentos"],
       "additionalProperties": false,
       "properties": {
         "casos_prioritarios": {
+          "type": "object",
+          "required": ["top_n", "chunk_size", "n_chunks", "patron_archivo"],
+          "additionalProperties": false,
+          "properties": {
+            "top_n": { "type": "integer" },
+            "chunk_size": { "type": "integer" },
+            "n_chunks": { "type": "integer" },
+            "patron_archivo": { "type": "string" }
+          }
+        },
+        "contratos_recientes": {
           "type": "object",
           "required": ["top_n", "chunk_size", "n_chunks", "patron_archivo"],
           "additionalProperties": false,

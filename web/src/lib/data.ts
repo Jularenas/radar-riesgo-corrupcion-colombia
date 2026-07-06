@@ -1,6 +1,7 @@
 import type {
   CasoPrioritario,
   CasosPrioritariosChunk,
+  ContratosRecientesChunk,
   DepartamentoDetalle,
   EntidadesTop,
   Meta,
@@ -58,6 +59,11 @@ export function getCasosChunk(idx: number): Promise<CasosPrioritariosChunk> {
   return fetchJson<CasosPrioritariosChunk>(`casos_prioritarios/${idxStr}.json`);
 }
 
+export function getContratosRecientesChunk(idx: number): Promise<ContratosRecientesChunk> {
+  const idxStr = String(idx).padStart(3, "0");
+  return fetchJson<ContratosRecientesChunk>(`contratos_recientes/${idxStr}.json`);
+}
+
 export function getEntidadesTop(): Promise<EntidadesTop> {
   return fetchJson<EntidadesTop>("entidades_top.json");
 }
@@ -72,7 +78,7 @@ export function getProveedoresTop(): Promise<ProveedoresTop> {
  * table already loaded it, so this works standalone too (e.g. a direct link
  * to /casos/:id).
  */
-export async function findCasoPorId(idContrato: string): Promise<CasoPrioritario | null> {
+async function findEnCasosPrioritarios(idContrato: string): Promise<CasoPrioritario | null> {
   const first = await getCasosChunk(0);
   const inFirst = first.items.find((c) => c.id_contrato === idContrato);
   if (inFirst) return inFirst;
@@ -83,4 +89,31 @@ export async function findCasoPorId(idContrato: string): Promise<CasoPrioritario
     if (found) return found;
   }
   return null;
+}
+
+/** Same idea as findEnCasosPrioritarios, over the contratos_recientes chunks. */
+async function findEnContratosRecientes(idContrato: string): Promise<CasoPrioritario | null> {
+  const first = await getContratosRecientesChunk(0);
+  const inFirst = first.items.find((c) => c.id_contrato === idContrato);
+  if (inFirst) return inFirst;
+
+  for (let i = 1; i < first.n_chunks; i++) {
+    const chunk = await getContratosRecientesChunk(i);
+    const found = chunk.items.find((c) => c.id_contrato === idContrato);
+    if (found) return found;
+  }
+  return null;
+}
+
+/**
+ * The detail route (/casos/:id) is shared by both the score-sorted "Casos
+ * prioritarios" table and the date-sorted "Contratos recientes" table, since
+ * both list the same row shape -- a contract can appear in one, both, or
+ * (rarely) neither top-N. Look in casos_prioritarios first (the common case:
+ * most direct links come from there), then fall back to contratos_recientes.
+ */
+export async function findCasoPorId(idContrato: string): Promise<CasoPrioritario | null> {
+  const enCasos = await findEnCasosPrioritarios(idContrato);
+  if (enCasos) return enCasos;
+  return findEnContratosRecientes(idContrato);
 }

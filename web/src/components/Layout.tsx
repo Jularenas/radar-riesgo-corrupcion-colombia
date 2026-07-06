@@ -6,6 +6,7 @@ import { cn } from "@/lib/cn";
 const NAV_ITEMS = [
   { to: "/", label: "Panorama", end: true },
   { to: "/casos", label: "Casos prioritarios", end: false },
+  { to: "/recientes", label: "Contratos recientes", end: false },
   { to: "/metodologia", label: "Metodología", end: false },
 ];
 
