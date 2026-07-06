@@ -49,13 +49,18 @@ DuckDB) → `rues-coverage` (empresas exprés) → `flags` (F01–F14) → `scor
 → `export` (JSON para el dashboard) → `web` (build de producción).
 
 **`MODE=full` requiere `SOCRATA_APP_TOKEN`** en `.env` (local) o como secret del repo (CI,
-`gh secret set SOCRATA_APP_TOKEN`). Con el token, `pull-full-parallel` corre las 5 descargas
-independientes (pequeños, slices SECOP I, Monitor Ciudadano, S1, S2) **concurrentemente** en
-vez de una tras otra -- sin token, dos pulls de S1/S2 en paralelo competirían por el mismo
-límite de frecuencia (bajo, por IP) de Socrata en modo anónimo en vez de ir más rápido, así que
-`pipeline.extract.pull` se niega a correr esa combinación (ver Makefile, target `pull-full`).
-Consigue un token gratis en [datos.gov.co](https://www.datos.gov.co) (cuenta → developer
-settings; ver también [dev.socrata.com/docs/app-tokens.html](https://dev.socrata.com/docs/app-tokens.html)).
+`gh secret set SOCRATA_APP_TOKEN`). Con el token, `pull` corre sus 3 descargas pequeñas
+concurrentemente entre sí y `pull-full` corre S1+S2 concurrentemente entre sí -- sin token, dos
+pulls en paralelo competirían por el mismo límite de frecuencia (bajo, por IP) de Socrata en modo
+anónimo en vez de ir más rápido, así que `pipeline.extract.pull` se niega a correr `--full
+--dataset X` sin token (ver Makefile, target `pull-full`). Existe también `pull-full-parallel`
+(las 5 descargas a la vez, `pull` y `pull-full` concurrentes entre sí), pero **no** está en el
+camino automático de `all`/CI: una corrida con esa concurrencia máxima coincidió con que el
+runner de GitHub Actions reportara "lost communication with the server" (sin logs capturados,
+causa no confirmable con certeza) -- queda definido para uso manual en una máquina con más
+margen, no para el pipeline automatizado. Consigue un token gratis en
+[datos.gov.co](https://www.datos.gov.co) (cuenta → developer settings; ver también
+[dev.socrata.com/docs/app-tokens.html](https://dev.socrata.com/docs/app-tokens.html)).
 
 Cada paso es re-ejecutable independientemente (`make pull-full`, `make marts MODE=full`, etc.)
 y los pulls son **resumibles**: si se interrumpen, simplemente vuelve a correr el mismo comando
@@ -125,7 +130,7 @@ make check      # ruff + pytest (pipeline)
 make pull       # catálogos pequeños + DIVIPOLA + slices + Monitor Ciudadano (concurrente)
 make pull-sample / make pull-full   # S1+S2, 2023 vs. historia completa (resumible, S1+S2
                                      #   concurrentes -- pull-full requiere SOCRATA_APP_TOKEN)
-make pull-full-parallel             # pull + pull-full, las 5 descargas a la vez (usa `all MODE=full`)
+make pull-full-parallel             # pull + pull-full, las 5 descargas a la vez (manual -- ver nota arriba, no en CI)
 make marts [MODE=full]              # limpieza + DuckDB (default: sample)
 make rues-coverage                  # empresa exprés: fecha_matricula + reporte de cobertura
 make flags                          # F01–F14

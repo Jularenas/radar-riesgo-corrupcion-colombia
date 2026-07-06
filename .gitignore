@@ -16,6 +16,8 @@ pipeline/data/
 # DuckDB
 *.duckdb
 *.duckdb.wal
+.tmp/
+pipeline/.tmp/
 
 # Python
 __pycache__/

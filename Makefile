@@ -51,11 +51,22 @@ pull-full:
 	for pid in $$p1 $$p2; do wait $$pid || status=1; done; \
 	exit $$status
 
-# Runs `pull` (small datasets) and `pull-full` (S1+S2) concurrently with EACH
-# OTHER too, not just internally -- all five pulls are independent datasets
-# sharing one lock-protected manifest, so none of them needs to wait on any
-# other. Used by `all MODE=full` and the GitHub Actions on-demand full-rebuild
-# path instead of running `pull` then `pull-full` one after another.
+# Runs `pull` (small datasets, 3-way concurrent internally) and `pull-full`
+# (S1+S2, 2-way concurrent internally) concurrently with EACH OTHER too --
+# all five pulls are independent datasets sharing one lock-protected
+# manifest, so none of them needs to wait on any other IN PRINCIPLE.
+#
+# NOT currently used by `all`/the GitHub Actions workflow (see those) after a
+# live run at this 5-concurrent-process peak failed with GitHub's hosted
+# runner reporting "lost communication with the server" (a CPU/memory
+# starvation symptom on the runner's standard 4-core/16GB spec) -- 99 minutes
+# in, no logs captured at all, so it couldn't be root-caused with certainty
+# (could genuinely be this, could be an unrelated GH-side infra hiccup; the
+# generic error message doesn't distinguish). Not worth re-risking a ~90+ min
+# run to find out. Left defined for manual use on a bigger machine (e.g. a
+# self-hosted runner or local dev box) where 5-way concurrency is more
+# clearly within resource budget -- just don't wire it back into the
+# automated path without more headroom or a smaller blast radius to test it.
 pull-full-parallel:
 	$(MAKE) pull & p1=$$!; \
 	$(MAKE) pull-full & p2=$$!; \
@@ -134,12 +145,14 @@ export-fixtures:
 # sample of S1/S2 and builds marts from it -- completes in minutes, the
 # CI-friendly smoke path from PLAN.md's Verification section. `make all
 # MODE=full` pulls the complete multi-year S1/S2 history instead (with
-# SOCRATA_APP_TOKEN set, all five independent pulls run concurrently via
-# pull-full-parallel -- see that target) and builds marts from that -- the
-# real production run.
+# SOCRATA_APP_TOKEN set, `pull` and `pull-full` each run their own sub-pulls
+# concurrently -- see those targets; NOT combined into pull-full-parallel,
+# see that target's comment for why) and builds marts from that -- the real
+# production run.
 all:
 	@if [ "$(MODE)" = "full" ]; then \
-		$(MAKE) pull-full-parallel; \
+		$(MAKE) pull; \
+		$(MAKE) pull-full; \
 	else \
 		$(MAKE) pull; \
 		$(MAKE) pull-sample; \
