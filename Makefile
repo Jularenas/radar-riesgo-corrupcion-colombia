@@ -1,7 +1,7 @@
 # Radar de Riesgo de Corrupcion -- Colombia
 # Compatible with GNU Make 3.81 (POSIX, no GNU-4-only features)
 
-.PHONY: check web serve pull pull-sample pull-full pull-refresh marts rues-coverage flags score export export-fixtures all all-serve weekly
+.PHONY: check web serve pull pull-sample pull-full pull-refresh marts profile rues-coverage flags score export export-fixtures all all-serve weekly
 
 check:
 	cd pipeline && uv run ruff check . && uv run pytest -q
@@ -55,6 +55,16 @@ marts:
 	else \
 		cd pipeline && uv run python -m pipeline.clean.build --sample; \
 	fi
+
+# M2: regenerate docs/PROFILING.md, a one-time schema-exploration report
+# (column types, null%, distinct examples) hardcoded to read data/raw/sample/
+# -- by design, since column *structure* doesn't differ between sample and
+# full pulls of the same dataset and profiling all 14M+ full-mode rows column
+# by column (COUNT(DISTINCT ...) per column) would be slow for no benefit.
+# NOT part of `marts`/`all`/`weekly` (requires `make pull-sample` to have run
+# at least once; unlike DQ_REPORT.md, which build.py itself regenerates on
+# every run and correctly reflects whichever mode was actually built).
+profile:
 	cd pipeline && uv run python -m pipeline.clean.profile
 
 # M4: populate dim_proveedor.fecha_matricula from RUES chamber data, then report coverage
