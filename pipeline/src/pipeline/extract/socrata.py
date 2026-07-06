@@ -15,6 +15,7 @@ Features:
 
 from __future__ import annotations
 
+import fcntl
 import json
 import os
 import tempfile
@@ -271,8 +272,7 @@ class SocrataClient:
             }
         )
         entry.setdefault("rows_pulled", 0)
-        manifest[name] = entry
-        _save_manifest(manifest_path, manifest)
+        _update_manifest_entry(manifest_path, name, entry)
 
         # ------------------------------------------------------------------
         # Keyset pagination
@@ -330,8 +330,7 @@ class SocrataClient:
                 }
             )
             entry["rows_pulled"] = entry.get("rows_pulled", 0) + n_rows
-            manifest[name] = entry
-            _save_manifest(manifest_path, manifest)
+            _update_manifest_entry(manifest_path, name, entry)
 
             total_new_rows += n_rows
             last_id = page_last_id
@@ -350,8 +349,7 @@ class SocrataClient:
             entry["status"] = "in_progress"  # will resume if needed
 
         entry["finished_at"] = _now_iso()
-        manifest[name] = entry
-        _save_manifest(manifest_path, manifest)
+        _update_manifest_entry(manifest_path, name, entry)
 
         # `rows_pulled_this_run` is informational only (not persisted to the
         # manifest -- `entry["rows_pulled"]` there stays the dataset's lifetime
@@ -376,6 +374,34 @@ def _load_manifest(path: Path) -> dict[str, Any]:
 
 def _save_manifest(path: Path, data: dict[str, Any]) -> None:
     _atomic_write_json(path, data)
+
+
+def _update_manifest_entry(path: Path, name: str, entry: dict[str, Any]) -> None:
+    """
+    Merge `manifest[name] = entry` into the manifest on disk, safe for two
+    OS processes pulling different datasets into the same manifest.json at
+    the same time (e.g. `make pull-full` runs S1 and S2 as separate
+    concurrent processes -- see Makefile). `pull_dataset` used to hold one
+    manifest dict in memory for its whole run and overwrite the entire file
+    on every page; a concurrent sibling process's dict wouldn't have this
+    process's key yet (or vice versa), so whichever process saved last would
+    silently erase the other's entry. This instead re-reads the latest
+    on-disk state and merges in only this process's own key, the whole
+    read-merge-write cycle serialized via an flock on a sibling `.lock` file
+    (advisory, POSIX-only -- fine for the local dev machine and GitHub
+    Actions' ubuntu runners, the only two environments this pipeline runs
+    on).
+    """
+    path.parent.mkdir(parents=True, exist_ok=True)
+    lock_path = path.with_suffix(path.suffix + ".lock")
+    with open(lock_path, "w") as lock_f:
+        fcntl.flock(lock_f.fileno(), fcntl.LOCK_EX)
+        try:
+            manifest = _load_manifest(path)
+            manifest[name] = entry
+            _save_manifest(path, manifest)
+        finally:
+            fcntl.flock(lock_f.fileno(), fcntl.LOCK_UN)
 
 
 def _atomic_write_json(path: Path, data: dict[str, Any]) -> None:

@@ -33,20 +33,29 @@ el sitio (`npm run build`, que empaqueta esos JSON), y desplegar la carpeta `web
 ```bash
 cd pipeline
 uv sync --extra dev
-cp .env.example .env   # opcional: agrega SOCRATA_APP_TOKEN para límites de frecuencia más altos
+cp .env.example .env   # modo sample: opcional. modo full: requerido, ver abajo
 ```
 
 Dos modos, desde la raíz del repo:
 
 ```bash
 make all                # modo "sample": solo 2023, minutos -- para desarrollo/pruebas
-make all MODE=full       # modo "full": historia completa SECOP II, HORAS -- para producción real
+make all MODE=full       # modo "full": historia completa SECOP II -- para producción real
 ```
 
 `make all` encadena: `pull` (catálogos pequeños + DIVIPOLA + slices SECOP I de casos
 emblemáticos + Monitor Ciudadano) → `pull-sample`/`pull-full` (S1/S2) → `marts` (limpieza +
 DuckDB) → `rues-coverage` (empresas exprés) → `flags` (F01–F14) → `score` (scoring + backtest)
 → `export` (JSON para el dashboard) → `web` (build de producción).
+
+**`MODE=full` requiere `SOCRATA_APP_TOKEN`** en `.env` (local) o como secret del repo (CI,
+`gh secret set SOCRATA_APP_TOKEN`). Con el token, `pull-full-parallel` corre las 5 descargas
+independientes (pequeños, slices SECOP I, Monitor Ciudadano, S1, S2) **concurrentemente** en
+vez de una tras otra -- sin token, dos pulls de S1/S2 en paralelo competirían por el mismo
+límite de frecuencia (bajo, por IP) de Socrata en modo anónimo en vez de ir más rápido, así que
+`pipeline.extract.pull` se niega a correr esa combinación (ver Makefile, target `pull-full`).
+Consigue un token gratis en [datos.gov.co](https://www.datos.gov.co) (cuenta → developer
+settings; ver también [dev.socrata.com/docs/app-tokens.html](https://dev.socrata.com/docs/app-tokens.html)).
 
 Cada paso es re-ejecutable independientemente (`make pull-full`, `make marts MODE=full`, etc.)
 y los pulls son **resumibles**: si se interrumpen, simplemente vuelve a correr el mismo comando
@@ -113,8 +122,10 @@ corruption/
 
 ```bash
 make check      # ruff + pytest (pipeline)
-make pull       # catálogos pequeños + DIVIPOLA + slices + Monitor Ciudadano
-make pull-sample / make pull-full   # S1+S2, 2023 vs. historia completa (resumible)
+make pull       # catálogos pequeños + DIVIPOLA + slices + Monitor Ciudadano (concurrente)
+make pull-sample / make pull-full   # S1+S2, 2023 vs. historia completa (resumible, S1+S2
+                                     #   concurrentes -- pull-full requiere SOCRATA_APP_TOKEN)
+make pull-full-parallel             # pull + pull-full, las 5 descargas a la vez (usa `all MODE=full`)
 make marts [MODE=full]              # limpieza + DuckDB (default: sample)
 make rues-coverage                  # empresa exprés: fecha_matricula + reporte de cobertura
 make flags                          # F01–F14

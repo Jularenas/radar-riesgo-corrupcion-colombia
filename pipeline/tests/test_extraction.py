@@ -23,6 +23,7 @@ from pipeline.extract.socrata import (
     _load_manifest,
     _parse_csv_all_strings,
     _save_manifest,
+    _update_manifest_entry,
 )
 
 # ---------------------------------------------------------------------------
@@ -208,6 +209,47 @@ class TestManifest:
         loaded = _load_manifest(path)
         assert loaded["ds1"]["rows_pulled"] == 100
         assert loaded["ds1"]["parts"][0]["last_id"] == "99"
+
+    def test_update_manifest_entry_preserves_other_keys(self, tmp_path: Path) -> None:
+        """Merging in one dataset's entry must not disturb a sibling's."""
+        path = tmp_path / "manifest.json"
+        _save_manifest(path, {"s1_secop2_contratos": {"status": "complete", "rows_pulled": 5657593}})
+        _update_manifest_entry(path, "s2_secop2_procesos", {"status": "in_progress", "rows_pulled": 50000})
+        loaded = _load_manifest(path)
+        assert loaded["s1_secop2_contratos"]["rows_pulled"] == 5657593
+        assert loaded["s2_secop2_procesos"]["rows_pulled"] == 50000
+
+    def test_update_manifest_entry_survives_concurrent_writers(self, tmp_path: Path) -> None:
+        """
+        Regression test for the real bug this function fixes: `make pull-full`
+        runs S1 and S2 as separate OS processes writing the same
+        manifest.json. The old code (`manifest = _load_manifest(...)` held
+        for the whole pull, mutated, then `_save_manifest` on every page)
+        held a stale in-memory copy per process -- whichever process saved
+        last would silently erase the other's entry. Simulate many
+        concurrent writers (threads, real OS-level file locking via fcntl
+        doesn't care whether the caller is a thread or a process) hammering
+        distinct keys and assert every single one survives.
+        """
+        import threading
+
+        path = tmp_path / "manifest.json"
+        n_writers = 20
+
+        def write_one(i: int) -> None:
+            for round_ in range(3):  # multiple rounds per writer, like real pagination
+                _update_manifest_entry(path, f"dataset_{i}", {"rows_pulled": round_ * 100 + i})
+
+        threads = [threading.Thread(target=write_one, args=(i,)) for i in range(n_writers)]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+
+        loaded = _load_manifest(path)
+        assert len(loaded) == n_writers
+        for i in range(n_writers):
+            assert loaded[f"dataset_{i}"]["rows_pulled"] == 2 * 100 + i  # last round each writer completed
 
 
 class TestCsvParsing:
@@ -687,3 +729,86 @@ class TestKnownCases:
                 assert case.get("hint_entidad_like"), (
                     f"SECOP I case {case['slug']} has no hint_entidad_like"
                 )
+
+
+class TestFullDatasetDispatch:
+    """
+    `make pull-full` runs S1 and S2 as two separate `--full --dataset X`
+    processes (see Makefile) instead of pull_big_full's sequential default,
+    so this routing is load-bearing: if `--full --dataset s1_secop2_contratos`
+    ever accidentally called pull_big_full (both datasets) instead of just
+    pull_s1_full, `make pull-full`'s two background processes would each
+    pull BOTH datasets, doubling the work instead of parallelizing it.
+    """
+
+    def _run_main(self, monkeypatch: pytest.MonkeyPatch, argv: list[str], tmp_path: Path) -> None:
+        import pipeline.extract.pull as pull_mod
+
+        monkeypatch.setattr("sys.argv", ["pull.py", *argv])
+        monkeypatch.setattr(pull_mod, "RAW_DIR", tmp_path)
+        monkeypatch.setenv("SOCRATA_APP_TOKEN", "fake-token-for-test")
+        pull_mod.main()
+
+    def test_full_with_s1_dataset_calls_only_pull_s1_full(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        import pipeline.extract.pull as pull_mod
+
+        with (
+            patch.object(pull_mod, "pull_s1_full") as mock_s1,
+            patch.object(pull_mod, "pull_s2_full") as mock_s2,
+            patch.object(pull_mod, "pull_big_full") as mock_big,
+        ):
+            self._run_main(monkeypatch, ["--full", "--dataset", "s1_secop2_contratos"], tmp_path)
+        mock_s1.assert_called_once()
+        mock_s2.assert_not_called()
+        mock_big.assert_not_called()
+
+    def test_full_with_s2_dataset_calls_only_pull_s2_full(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        import pipeline.extract.pull as pull_mod
+
+        with (
+            patch.object(pull_mod, "pull_s1_full") as mock_s1,
+            patch.object(pull_mod, "pull_s2_full") as mock_s2,
+            patch.object(pull_mod, "pull_big_full") as mock_big,
+        ):
+            self._run_main(monkeypatch, ["--full", "--dataset", "s2_secop2_procesos"], tmp_path)
+        mock_s2.assert_called_once()
+        mock_s1.assert_not_called()
+        mock_big.assert_not_called()
+
+    def test_full_without_dataset_calls_pull_big_full(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        import pipeline.extract.pull as pull_mod
+
+        with patch.object(pull_mod, "pull_big_full") as mock_big:
+            self._run_main(monkeypatch, ["--full"], tmp_path)
+        mock_big.assert_called_once()
+
+    def test_full_with_dataset_requires_app_token(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        """Without SOCRATA_APP_TOKEN, --full --dataset X must refuse to run rather than silently throttle."""
+        import pipeline.extract.pull as pull_mod
+
+        monkeypatch.setattr("sys.argv", ["pull.py", "--full", "--dataset", "s1_secop2_contratos"])
+        monkeypatch.setattr(pull_mod, "RAW_DIR", tmp_path)
+        monkeypatch.delenv("SOCRATA_APP_TOKEN", raising=False)
+        with (
+            patch.object(pull_mod, "pull_s1_full") as mock_s1,
+            pytest.raises(SystemExit) as exc_info,
+        ):
+            pull_mod.main()
+        assert exc_info.value.code == 1
+        mock_s1.assert_not_called()
+
+    def test_full_with_unsupported_dataset_name_exits(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        """--full --dataset only makes sense for the two big datasets, not the small ones."""
+        with pytest.raises(SystemExit) as exc_info:
+            self._run_main(monkeypatch, ["--full", "--dataset", "e1_rues_santarosa"], tmp_path)
+        assert exc_info.value.code == 1

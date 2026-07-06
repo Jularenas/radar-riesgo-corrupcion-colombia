@@ -16,6 +16,7 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import os
 import sys
 from pathlib import Path
 from typing import Any
@@ -397,28 +398,23 @@ def pull_small(client: SocrataClient) -> None:
             log.error("Failed to pull %s: %s", name, e)
 
 
-def pull_big_full(client: SocrataClient) -> None:
-    """Pull big datasets (S1 + S2) fully — long-running, resumable."""
-    print(
-        "\nWARNING: Full pull of S1 (~5.6M rows) and S2 (~8.7M rows) may take several hours.\n"
-        "The pull is resumable: kill it at any time and re-run to continue.\n"
-    )
-    manifest_path = RAW_DIR / "manifest.json"
-
-    # S1: all columns
+def pull_s1_full(client: SocrataClient) -> None:
+    """Pull S1 (SECOP II Contratos) fully, all columns — long-running, resumable."""
     log.info("Pulling S1 (SECOP II Contratos) — all columns")
     try:
         entry = client.pull_dataset(
             dataset_id=DATASETS["s1_secop2_contratos"],
             name="s1_secop2_contratos",
-            manifest_path=manifest_path,
+            manifest_path=RAW_DIR / "manifest.json",
         )
         log.info("S1 status: %s, rows: %d", entry.get("status"), entry.get("rows_pulled", 0))
     except Exception as e:
         log.error("S1 pull error: %s", e)
         raise
 
-    # S2: column-projected
+
+def pull_s2_full(client: SocrataClient) -> None:
+    """Pull S2 (SECOP II Procesos) fully, column-projected — long-running, resumable."""
     log.info("Pulling S2 (SECOP II Procesos) — selected columns")
     try:
         meta = client.get_metadata(DATASETS["s2_secop2_procesos"], name="s2_secop2_procesos")
@@ -427,12 +423,30 @@ def pull_big_full(client: SocrataClient) -> None:
             dataset_id=DATASETS["s2_secop2_procesos"],
             name="s2_secop2_procesos",
             select=s2_select,
-            manifest_path=manifest_path,
+            manifest_path=RAW_DIR / "manifest.json",
         )
         log.info("S2 status: %s, rows: %d", entry.get("status"), entry.get("rows_pulled", 0))
     except Exception as e:
         log.error("S2 pull error: %s", e)
         raise
+
+
+def pull_big_full(client: SocrataClient) -> None:
+    """
+    Pull S1 + S2 fully, sequentially in this one process. Used when `--full`
+    is invoked without `--dataset` (e.g. a manual one-off pull). `make
+    pull-full` instead runs `pull_s1_full`/`pull_s2_full` as two separate
+    concurrent processes (see Makefile) -- both write to the same
+    manifest.json either way, which is safe because `pull_dataset`'s writes
+    go through `_update_manifest_entry`'s lock-protected merge, not a
+    stale in-memory copy.
+    """
+    print(
+        "\nWARNING: Full pull of S1 (~5.6M rows) and S2 (~8.7M rows) may take several hours.\n"
+        "The pull is resumable: kill it at any time and re-run to continue.\n"
+    )
+    pull_s1_full(client)
+    pull_s2_full(client)
 
 
 def pull_sample(client: SocrataClient) -> None:
@@ -600,7 +614,37 @@ def main() -> None:
         if args.divipola:
             pull_divipola(client)
 
-        if args.full:
+        if args.full and args.dataset:
+            # Pulling one of S1/S2 by name under --full is how `make pull-full`
+            # runs them as two concurrent processes (see Makefile) instead of
+            # pull_big_full's sequential default. Both share manifest.json, so
+            # this only goes fast (rather than just contending for one small
+            # tokenless rate-limit budget -- verified against Socrata's own
+            # docs) with an app token configured.
+            if not os.getenv("SOCRATA_APP_TOKEN"):
+                log.error(
+                    "SOCRATA_APP_TOKEN is not set. `--full --dataset X` is meant to run "
+                    "concurrently with its sibling dataset (see `make pull-full`), and "
+                    "tokenless requests share one small per-IP rate-limit budget -- two "
+                    "concurrent full pulls would fight over it instead of going faster. "
+                    "Get a free token at https://www.datos.gov.co (account -> developer "
+                    "settings) and set it via `export SOCRATA_APP_TOKEN=...` or in "
+                    "pipeline/.env -- see pipeline/.env.example."
+                )
+                sys.exit(1)
+            if args.dataset == "s1_secop2_contratos":
+                pull_s1_full(client)
+            elif args.dataset == "s2_secop2_procesos":
+                pull_s2_full(client)
+            else:
+                log.error(
+                    "--full --dataset only supports s1_secop2_contratos or "
+                    "s2_secop2_procesos (got: %s) -- other datasets are small enough "
+                    "that --full has no separate per-dataset pull for them",
+                    args.dataset,
+                )
+                sys.exit(1)
+        elif args.full:
             pull_big_full(client)
 
         if args.sample:
@@ -608,7 +652,7 @@ def main() -> None:
 
         if args.refresh and args.dataset:
             pull_refresh(client, args.dataset)
-        elif args.dataset and not args.refresh:
+        elif args.dataset and not args.refresh and not args.full:
             manifest_path = RAW_DIR / "manifest.json"
             dataset_id = DATASETS.get(args.dataset)
             if not dataset_id:

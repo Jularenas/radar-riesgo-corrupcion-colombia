@@ -14,7 +14,7 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: "Data mode: 'sample' (minutes, 2023 only) or 'full' (hours, complete history)"
+        description: "Data mode: 'sample' (minutes, 2023 only) or 'full' (complete history, parallel pulls w/ SOCRATA_APP_TOKEN)"
         type: choice
         options: [sample, full]
         default: sample
@@ -66,9 +66,8 @@ jobs:
             echo "::notice::Scheduled weekly refresh -- incremental pull, not a full re-download."
             make weekly
           elif [ "$MODE" = "full" ]; then
-            echo "::notice::Full data refresh requested -- this pulls the complete SECOP II history and can take hours."
-            make pull
-            make pull-full
+            echo "::notice::Full data refresh requested -- pulls the complete SECOP II history, S1/S2/small-datasets running concurrently (requires SOCRATA_APP_TOKEN, see Makefile's pull-full)."
+            make pull-full-parallel
             make marts MODE=full
             make rues-coverage
             make flags
