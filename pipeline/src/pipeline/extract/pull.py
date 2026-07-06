@@ -185,15 +185,18 @@ def load_known_cases() -> list[dict[str, Any]]:
         return yaml.safe_load(f) or []
 
 
-def pull_secop1_slices(client: SocrataClient, cases: list[dict[str, Any]]) -> None:
+def pull_secop1_slices(client: SocrataClient, cases: list[dict[str, Any]]) -> bool:
     """
     For each known case with secop1=True, pull targeted slices from
-    s3_secop1_procesos (and s4_secop1_contratos as fallback).
+    s3_secop1_procesos (and s4_secop1_contratos as fallback). Tries every
+    case/dataset combination even if an earlier one fails, but returns False
+    if any did (see pull_small's docstring for why callers must check this).
     """
     slices_dir = RAW_DIR / "secop1_slices"
     slices_dir.mkdir(parents=True, exist_ok=True)
     manifest_path = slices_dir / "manifest.json"
     manifest = _load_manifest(manifest_path)
+    ok = True
 
     secop1_datasets = {
         "s3": ("s3_secop1_procesos", DATASETS.get("s3_secop1_procesos", "f789-7hwg")),
@@ -321,6 +324,9 @@ def pull_secop1_slices(client: SocrataClient, cases: list[dict[str, Any]]) -> No
                     "error": str(e),
                 }
                 _save_manifest(manifest_path, manifest)
+                ok = False
+
+    return ok
 
 
 def _find_col(columns: list[str], candidates: list[str]) -> str | None:
@@ -374,9 +380,19 @@ def build_s2_select(meta: dict[str, Any]) -> str:
 # ---------------------------------------------------------------------------
 
 
-def pull_small(client: SocrataClient) -> None:
-    """Pull all small datasets fully."""
+def pull_small(client: SocrataClient) -> bool:
+    """
+    Pull all small datasets fully. Tries every dataset even if an earlier one
+    fails (one flaky dataset shouldn't block the rest), but returns False if
+    ANY failed -- after retries are exhausted in SocrataClient (see
+    _is_retryable), a persistent failure here used to be logged and
+    swallowed, so `make pull` exited 0 with e.g. l4_siri's directory empty,
+    and the real failure only surfaced much later as a confusing
+    `_duckdb.IOException` deep inside `marts`. Callers must check this and
+    exit non-zero so the failure is loud and immediate instead.
+    """
     manifest_path = RAW_DIR / "manifest.json"
+    ok = True
     for name in SMALL_DATASETS:
         dataset_id = DATASETS.get(name)
         if not dataset_id:
@@ -396,6 +412,8 @@ def pull_small(client: SocrataClient) -> None:
             )
         except Exception as e:
             log.error("Failed to pull %s: %s", name, e)
+            ok = False
+    return ok
 
 
 def pull_s1_full(client: SocrataClient) -> None:
@@ -602,13 +620,15 @@ def main() -> None:
 
     RAW_DIR.mkdir(parents=True, exist_ok=True)
 
+    ok = True
+
     with SocrataClient(RAW_DIR) as client:
         if args.summary:
             print_summary(RAW_DIR, sample=args.sample)
             return
 
         if args.all_small:
-            pull_small(client)
+            ok = pull_small(client) and ok
             pull_divipola(client)
 
         if args.divipola:
@@ -673,12 +693,20 @@ def main() -> None:
 
         if args.secop1_slices:
             cases = load_known_cases()
-            pull_secop1_slices(client, cases)
+            ok = pull_secop1_slices(client, cases) and ok
 
         if args.monitor:
             from pipeline.extract.monitor_ciudadano import download as mc_download
 
             mc_download(RAW_DIR)
+
+    if not ok:
+        log.error(
+            "One or more datasets failed to pull after retries (see errors above) -- "
+            "exiting non-zero so this fails loudly here instead of surfacing later as a "
+            "confusing crash in `marts` (missing part-*.parquet files)."
+        )
+        sys.exit(1)
 
     if not any(
         [

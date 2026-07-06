@@ -812,3 +812,45 @@ class TestFullDatasetDispatch:
         with pytest.raises(SystemExit) as exc_info:
             self._run_main(monkeypatch, ["--full", "--dataset", "e1_rues_santarosa"], tmp_path)
         assert exc_info.value.code == 1
+
+
+class TestPullSmallFailureAggregation:
+    """
+    Regression coverage for a real bug caught live: l4_siri failed with a
+    transient network error (since fixed separately by widening
+    _is_retryable to cover httpx.TransportError), pull_small logged and
+    swallowed it, `make pull` exited 0 with l4_siri's directory empty, and
+    the real failure only surfaced ~20+ minutes later as a confusing
+    `_duckdb.IOException` deep inside `marts`. pull_small/pull_secop1_slices
+    must still attempt every dataset (one flaky dataset shouldn't block the
+    rest) but report the failure back so the CLI can exit non-zero.
+    """
+
+    def test_pull_small_tries_all_datasets_and_reports_failure(self, fake_client: tuple) -> None:
+        from pipeline.extract.pull import SMALL_DATASETS, pull_small
+
+        client, _ = fake_client
+        attempted: list[str] = []
+
+        def fake_pull_dataset(*, dataset_id, name, manifest_path=None, **kwargs):  # noqa: ANN001
+            attempted.append(name)
+            if name == "l4_siri":
+                raise RuntimeError("peer closed connection without sending complete message body")
+            return {"status": "complete", "rows_pulled": 1, "live_count_at_start": 1}
+
+        with patch.object(client, "pull_dataset", side_effect=fake_pull_dataset):
+            result = pull_small(client)
+
+        assert result is False
+        assert attempted == SMALL_DATASETS  # every dataset attempted, none skipped after the failure
+
+    def test_pull_small_returns_true_when_all_succeed(self, fake_client: tuple) -> None:
+        from pipeline.extract.pull import pull_small
+
+        client, _ = fake_client
+        with patch.object(
+            client, "pull_dataset", return_value={"status": "complete", "rows_pulled": 1, "live_count_at_start": 1}
+        ):
+            result = pull_small(client)
+
+        assert result is True

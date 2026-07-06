@@ -49,8 +49,17 @@ PAGE_SIZE = 50_000
 
 
 def _is_retryable(exc: BaseException) -> bool:
-    """Return True for 429/5xx HTTP responses and transport timeouts."""
-    if isinstance(exc, httpx.TimeoutException):
+    """Return True for 429/5xx HTTP responses and any transport-level failure."""
+    if isinstance(exc, httpx.TransportError):
+        # Covers httpx.TimeoutException (a TransportError subclass) plus
+        # ConnectError/ReadError/RemoteProtocolError -- e.g. "peer closed
+        # connection without sending complete message body", observed live
+        # pulling l4_siri and e1_rues_santarosa. These have no HTTP response
+        # to read a status code from, unlike HTTPStatusError below. A real,
+        # ordinary risk over a many-thousand-request pull spanning tens of
+        # minutes against a government open-data API -- not specific to
+        # running pulls concurrently, just more likely to show up somewhere
+        # across a long pull than it is to show up in any one request.
         return True
     if isinstance(exc, httpx.HTTPStatusError):
         return exc.response.status_code in (429, 500, 502, 503, 504)
