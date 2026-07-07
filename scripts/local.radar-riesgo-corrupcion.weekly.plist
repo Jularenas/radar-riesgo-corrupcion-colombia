@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>Label</key>
+	<string>local.radar-riesgo-corrupcion.weekly</string>
+
+	<!-- Runs `make weekly` (pull-refresh -> marts -> flags -> score -> export
+	     -> build -> publish to gh-pages) from the repo root. Absolute paths
+	     everywhere: launchd jobs get a minimal environment, not your shell's
+	     profile, so `make`/`uv`/`npm`/`git`/`gh` must all be reachable via
+	     PATH below or explicit paths -- there's no ~/.zshrc to source. -->
+	<key>ProgramArguments</key>
+	<array>
+		<string>/usr/bin/make</string>
+		<string>weekly</string>
+	</array>
+	<!-- TEMPLATE: replace /Users/YOUR_USERNAME/Documents/corruption below (both
+	     WorkingDirectory and the two log paths) with your actual clone path
+	     before `cp`-ing this into ~/Library/LaunchAgents/ and `launchctl load`ing
+	     it -- see README's weekly-automation section. -->
+	<key>WorkingDirectory</key>
+	<string>/Users/YOUR_USERNAME/Documents/corruption</string>
+	<key>EnvironmentVariables</key>
+	<dict>
+		<key>PATH</key>
+		<string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
+	</dict>
+
+	<!-- Sundays at 09:00 local time -- a time your Mac is more likely to
+	     actually be on/awake than the original 3am-Bogota slot this project
+	     used when it ran on GitHub Actions. launchd does NOT retroactively
+	     run a missed StartCalendarInterval firing if the machine is asleep
+	     or off at that moment; it's simply skipped until the next one. For
+	     more reliable unattended runs, configure a scheduled wake with
+	     `sudo pmset repeat wakeorpoweron MTWRFSU 08:55:00` (a few minutes
+	     before this fires) -- optional, not required. -->
+	<key>StartCalendarInterval</key>
+	<dict>
+		<key>Weekday</key>
+		<integer>0</integer>
+		<key>Hour</key>
+		<integer>9</integer>
+		<key>Minute</key>
+		<integer>0</integer>
+	</dict>
+
+	<key>StandardOutPath</key>
+	<string>/Users/YOUR_USERNAME/Library/Logs/radar-riesgo-corrupcion-colombia/weekly.log</string>
+	<key>StandardErrorPath</key>
+	<string>/Users/YOUR_USERNAME/Library/Logs/radar-riesgo-corrupcion-colombia/weekly.log</string>
+</dict>
+</plist>

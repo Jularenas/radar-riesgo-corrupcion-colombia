@@ -48,19 +48,24 @@ emblemáticos + Monitor Ciudadano) → `pull-sample`/`pull-full` (S1/S2) → `ma
 DuckDB) → `rues-coverage` (empresas exprés) → `flags` (F01–F14) → `score` (scoring + backtest)
 → `export` (JSON para el dashboard) → `web` (build de producción).
 
-**`MODE=full` requiere `SOCRATA_APP_TOKEN`** en `.env` (local) o como secret del repo (CI,
-`gh secret set SOCRATA_APP_TOKEN`). Con el token, `pull` corre sus 3 descargas pequeñas
-concurrentemente entre sí y `pull-full` corre S1+S2 concurrentemente entre sí -- sin token, dos
-pulls en paralelo competirían por el mismo límite de frecuencia (bajo, por IP) de Socrata en modo
-anónimo en vez de ir más rápido, así que `pipeline.extract.pull` se niega a correr `--full
---dataset X` sin token (ver Makefile, target `pull-full`). Existe también `pull-full-parallel`
-(las 5 descargas a la vez, `pull` y `pull-full` concurrentes entre sí), pero **no** está en el
-camino automático de `all`/CI: una corrida con esa concurrencia máxima coincidió con que el
-runner de GitHub Actions reportara "lost communication with the server" (sin logs capturados,
-causa no confirmable con certeza) -- queda definido para uso manual en una máquina con más
-margen, no para el pipeline automatizado. Consigue un token gratis en
-[datos.gov.co](https://www.datos.gov.co) (cuenta → developer settings; ver también
+**`MODE=full` requiere `SOCRATA_APP_TOKEN`** en `pipeline/.env` (`cp pipeline/.env.example
+pipeline/.env`, luego pega el token). Sin token, los pulls concurrentes (abajo) competirían por
+el mismo límite de frecuencia (bajo, por IP) de Socrata en modo anónimo en vez de ir más rápido,
+así que `pipeline.extract.pull` se niega a correr `--full --dataset X` sin token (ver Makefile,
+target `pull-full`). Consigue uno gratis en [datos.gov.co](https://www.datos.gov.co) (cuenta →
+developer settings; ver también
 [dev.socrata.com/docs/app-tokens.html](https://dev.socrata.com/docs/app-tokens.html)).
+
+Con el token, `make all MODE=full` corre **las 6 descargas independientes a la vez** vía
+`pull-full-parallel`: los 3 catálogos pequeños (`pull`) concurrentes entre sí, S1+S2+RUES
+(`pull-full`) concurrentes entre sí, y ambos grupos concurrentes entre sí -- pensado para una
+máquina de desarrollo real (10 núcleos/32GB en la que se probó), no para un runner de CI
+compartido. Este proyecto corrió originalmente en GitHub Actions; se migró a ejecución local
+(ver sección de automatización abajo) después de que esa concurrencia coincidiera con que el
+runner estándar (4 núcleos/16GB) reportara "lost communication with the server" -- sin logs
+capturados, nunca se pudo confirmar con certeza si la causa era esa o una falla de
+infraestructura de GitHub no relacionada, pero no valía la pena seguir arriesgando corridas de
+~90 min para averiguarlo en una máquina con mucho menos margen que la tuya.
 
 Cada paso es re-ejecutable independientemente (`make pull-full`, `make marts MODE=full`, etc.)
 y los pulls son **resumibles**: si se interrumpen, simplemente vuelve a correr el mismo comando
@@ -84,32 +89,62 @@ npm run preview    # sirve dist/ localmente para verificar antes de desplegar
 
 ### 3. Desplegar
 
-El sitio es 100% estático (`web/dist/`) — cualquier hosting de archivos estáticos sirve.
-`web/public/data/` está en `.gitignore` (puede pesar varios MB y se regenera con el pipeline),
-así que el flujo recomendado es desplegar el **build ya generado**, no dejar que la plataforma
-lo reconstruya desde el repo (que no tiene los datos reales).
+**Producción real: GitHub Pages, servido desde la rama `gh-pages`, publicada desde esta
+máquina** (no hay CI de por medio):
 
-**Vercel** (`vercel.json` en la raíz):
 ```bash
-npm i -g vercel
-cd web && npm run build
-vercel deploy --prebuilt --cwd .. 
-```
-También puedes conectar el repo por git para *preview deploys* automáticos por PR — como
-`web/public/data/` no está en git, esos previews mostrarán los datos de ejemplo (fixtures),
-lo cual es intencional y útil para revisar cambios de interfaz sin depender del pipeline.
-
-**Netlify** (`netlify.toml` en la raíz):
-```bash
-npm i -g netlify-cli
-cd web && npm run build
-netlify deploy --prod --dir=dist
+make web-gh-pages   # build con el base path correcto (.../radar-riesgo-corrupcion-colombia/)
+make publish        # construye un git worktree, empuja web/dist/ a la rama gh-pages
 ```
 
-**GitHub Pages**: workflow en `.github/workflows/deploy-gh-pages.yml`, disparo manual
-(`workflow_dispatch`) desde la pestaña Actions, con un input `mode` (`sample` o `full`). Corre
-el pipeline completo dentro del job — con `mode=full` puede tomar horas; hay un cron
-comentado en el workflow para refrescos desatendidos mensuales.
+`make publish` (`scripts/publish_gh_pages.sh`) usa un git worktree desechable para no tocar tu
+checkout principal: crea la rama `gh-pages` como huérfana la primera vez, la actualiza en
+corridas siguientes, y no hace commit si el build no cambió. Pages está configurado en
+Settings → Pages → Source: **Deploy from a branch** (`gh-pages`) -- no hay ningún workflow de
+GitHub Actions en este repo.
+
+Esto es exactamente lo que corre `make weekly` (ver la sección de automatización semanal abajo)
+al final de su cadena, así que normalmente no necesitas correr `web-gh-pages`/`publish` a mano
+salvo para un despliegue puntual.
+
+**Alternativas** (no son la ruta de producción actual, pero `vercel.json`/`netlify.toml` en la
+raíz siguen siendo válidos si quieres hostear en otro lado):
+```bash
+# Vercel
+npm i -g vercel && cd web && npm run build && vercel deploy --prebuilt --cwd ..
+# Netlify
+npm i -g netlify-cli && cd web && npm run build && netlify deploy --prod --dir=dist
+```
+En ambos casos, `web/public/data/` está en `.gitignore` (pesa varios MB, se regenera con el
+pipeline), así que despliega el **build ya generado**, no dejes que la plataforma lo reconstruya
+desde el repo (que no tiene los datos reales) -- salvo que quieras que un *preview deploy* por PR
+muestre los datos de ejemplo (fixtures) a propósito, para revisar cambios de interfaz sin
+depender del pipeline.
+
+## Automatización semanal (launchd, sin CI)
+
+El refresco semanal corre **en esta máquina**, disparado por un LaunchAgent de macOS -- no por
+un cron de GitHub Actions. `make weekly` encadena: `pull` + `pull-refresh` (concurrentes entre
+sí, ver Makefile) → `marts MODE=full` → `rues-coverage` → `flags` → `score` → `export` →
+`web-gh-pages` → `publish`.
+
+El plist en `scripts/` es una plantilla (usa `/Users/YOUR_USERNAME/...` -- sustituido por la ruta
+real antes de instalarlo, para no exponer un username local en un repo público). Ya está
+instalado en esta máquina: copiado a `~/Library/LaunchAgents/` con la ruta real y cargado con
+`launchctl load`. Corre los domingos a las 9:00am hora local. Comandos útiles:
+
+```bash
+launchctl list | grep radar-riesgo                                      # confirma que está cargado
+launchctl start local.radar-riesgo-corrupcion.weekly                    # dispara una corrida ya, sin esperar al domingo
+tail -f ~/Library/Logs/radar-riesgo-corrupcion-colombia/weekly.log       # sigue el log de la última corrida
+launchctl unload ~/Library/LaunchAgents/local.radar-riesgo-corrupcion.weekly.plist  # desactiva
+```
+
+**Limitación real de launchd, no de este proyecto:** `StartCalendarInterval` no recupera una
+corrida perdida si la Mac estaba dormida/apagada a esa hora -- simplemente se salta hasta la
+próxima vez que coincida el horario con la máquina despierta. Para mayor confiabilidad, agenda
+un despertar automático un poco antes con
+`sudo pmset repeat wakeorpoweron MTWRFSU 08:55:00` (opcional).
 
 ## Estructura del repositorio
 
@@ -120,7 +155,8 @@ corruption/
 ├── pipeline/                 # Python 3.12+, uv — extracción, limpieza, banderas, scoring, export
 ├── web/                       # React + TypeScript + Vite + Tailwind — dashboard estático
 ├── docs/                      # DQ_REPORT.md, PROFILING.md, RUES_COVERAGE.md, METHODOLOGY.md
-├── vercel.json / netlify.toml / .github/workflows/deploy-gh-pages.yml
+├── scripts/                   # publish_gh_pages.sh + el plist de launchd (ver runbook)
+├── vercel.json / netlify.toml # alternativas de hosting no usadas en producción (ver Desplegar)
 ```
 
 ## Comandos de referencia
@@ -128,18 +164,21 @@ corruption/
 ```bash
 make check      # ruff + pytest (pipeline)
 make pull       # catálogos pequeños + DIVIPOLA + slices + Monitor Ciudadano (concurrente)
-make pull-sample / make pull-full   # S1+S2, 2023 vs. historia completa (resumible, S1+S2
+make pull-sample / make pull-full   # S1+S2, 2023 vs. historia completa (resumible, S1+S2+RUES
                                      #   concurrentes -- pull-full requiere SOCRATA_APP_TOKEN)
-make pull-full-parallel             # pull + pull-full, las 5 descargas a la vez (manual -- ver nota arriba, no en CI)
+make pull-full-parallel             # pull + pull-full, las 6 descargas a la vez (usa `all MODE=full`)
 make marts [MODE=full]              # limpieza + DuckDB (default: sample)
 make rues-coverage                  # empresa exprés: fecha_matricula + reporte de cobertura
 make flags                          # F01–F14
 make score                          # scoring + backtest contra casos conocidos
 make export                         # JSON del dashboard (web/public/data/)
-make web                            # build de producción del dashboard
+make web                            # build de desarrollo del dashboard (base path raíz, para `make serve`)
+make web-gh-pages                   # build de producción (base path /radar-riesgo-corrupcion-colombia/)
+make publish                        # publica web/dist/ a la rama gh-pages
 make serve                          # sirve web/dist/ ya construido en http://localhost:4173
 make all [MODE=full]                # pipeline completo + build
 make all-serve [MODE=full]          # pipeline completo + build + servir localmente
+make weekly                         # pull-refresh + rebuild + publish -- lo que corre el LaunchAgent semanal
 ```
 
 ## Aviso legal
