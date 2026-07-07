@@ -42,11 +42,17 @@ SMALL_DATASETS = [
     "l2_multas_secop1",
     "l3_multas_secop2",
     "l4_siri",
-    "e1_rues_santarosa",
     "e1_rues_ibague",
 ]
 
-BIG_DATASETS = ["s1_secop2_contratos", "s2_secop2_procesos"]
+# e1_rues_santarosa (9.36M rows) is NOT small -- comparable in scale to S1/S2,
+# not the ~tens-of-thousands-of-rows datasets above (e1_rues_ibague is only
+# 90,937 rows, an actual small dataset despite the shared "e1_rues_" prefix).
+# Pulling it inside pull_small's sequential loop bottlenecked that whole
+# "small" bucket on one 9M-row pull. Treated here as a peer of S1/S2 for
+# full pulls (see Makefile's pull-full); its --refresh path already ran
+# concurrently with s1/s2 (see pull-refresh) since that predates this split.
+BIG_DATASETS = ["s1_secop2_contratos", "s2_secop2_procesos", "e1_rues_santarosa"]
 
 # Columns to pull for s2_secop2_procesos (verified against live metadata 2026-07-03)
 # Actual column names from API: entidad, nit_entidad, departamento_entidad,
@@ -449,22 +455,38 @@ def pull_s2_full(client: SocrataClient) -> None:
         raise
 
 
+def pull_rues_full(client: SocrataClient) -> None:
+    """Pull e1_rues_santarosa fully (~9.36M rows) -- see BIG_DATASETS' comment for why this isn't in SMALL_DATASETS."""
+    log.info("Pulling e1_rues_santarosa (RUES Santa Rosa de Cabal)")
+    try:
+        entry = client.pull_dataset(
+            dataset_id=DATASETS["e1_rues_santarosa"],
+            name="e1_rues_santarosa",
+            manifest_path=RAW_DIR / "manifest.json",
+        )
+        log.info("RUES status: %s, rows: %d", entry.get("status"), entry.get("rows_pulled", 0))
+    except Exception as e:
+        log.error("RUES pull error: %s", e)
+        raise
+
+
 def pull_big_full(client: SocrataClient) -> None:
     """
-    Pull S1 + S2 fully, sequentially in this one process. Used when `--full`
-    is invoked without `--dataset` (e.g. a manual one-off pull). `make
-    pull-full` instead runs `pull_s1_full`/`pull_s2_full` as two separate
-    concurrent processes (see Makefile) -- both write to the same
-    manifest.json either way, which is safe because `pull_dataset`'s writes
-    go through `_update_manifest_entry`'s lock-protected merge, not a
-    stale in-memory copy.
+    Pull S1 + S2 + e1_rues_santarosa fully, sequentially in this one process.
+    Used when `--full` is invoked without `--dataset` (e.g. a manual one-off
+    pull). `make pull-full` instead runs each as a separate concurrent
+    process (see Makefile) -- all three write to the same manifest.json
+    either way, which is safe because `pull_dataset`'s writes go through
+    `_update_manifest_entry`'s lock-protected merge, not a stale in-memory
+    copy.
     """
     print(
-        "\nWARNING: Full pull of S1 (~5.6M rows) and S2 (~8.7M rows) may take several hours.\n"
-        "The pull is resumable: kill it at any time and re-run to continue.\n"
+        "\nWARNING: Full pull of S1 (~5.6M rows), S2 (~8.7M rows), and RUES (~9.4M rows) "
+        "may take several hours.\nThe pull is resumable: kill it at any time and re-run to continue.\n"
     )
     pull_s1_full(client)
     pull_s2_full(client)
+    pull_rues_full(client)
 
 
 def pull_sample(client: SocrataClient) -> None:
@@ -635,17 +657,18 @@ def main() -> None:
             pull_divipola(client)
 
         if args.full and args.dataset:
-            # Pulling one of S1/S2 by name under --full is how `make pull-full`
-            # runs them as two concurrent processes (see Makefile) instead of
-            # pull_big_full's sequential default. Both share manifest.json, so
-            # this only goes fast (rather than just contending for one small
-            # tokenless rate-limit budget -- verified against Socrata's own
-            # docs) with an app token configured.
+            # Pulling one of the BIG_DATASETS by name under --full is how
+            # `make pull-full` runs them as concurrent sibling processes (see
+            # Makefile) instead of pull_big_full's sequential default. All
+            # share manifest.json, so this only goes fast (rather than just
+            # contending for one small tokenless rate-limit budget --
+            # verified against Socrata's own docs) with an app token
+            # configured.
             if not os.getenv("SOCRATA_APP_TOKEN"):
                 log.error(
                     "SOCRATA_APP_TOKEN is not set. `--full --dataset X` is meant to run "
-                    "concurrently with its sibling dataset (see `make pull-full`), and "
-                    "tokenless requests share one small per-IP rate-limit budget -- two "
+                    "concurrently with its sibling datasets (see `make pull-full`), and "
+                    "tokenless requests share one small per-IP rate-limit budget -- "
                     "concurrent full pulls would fight over it instead of going faster. "
                     "Get a free token at https://www.datos.gov.co (account -> developer "
                     "settings) and set it via `export SOCRATA_APP_TOKEN=...` or in "
@@ -656,11 +679,13 @@ def main() -> None:
                 pull_s1_full(client)
             elif args.dataset == "s2_secop2_procesos":
                 pull_s2_full(client)
+            elif args.dataset == "e1_rues_santarosa":
+                pull_rues_full(client)
             else:
                 log.error(
-                    "--full --dataset only supports s1_secop2_contratos or "
-                    "s2_secop2_procesos (got: %s) -- other datasets are small enough "
-                    "that --full has no separate per-dataset pull for them",
+                    "--full --dataset only supports %s (got: %s) -- other datasets are "
+                    "small enough that --full has no separate per-dataset pull for them",
+                    ", ".join(BIG_DATASETS),
                     args.dataset,
                 )
                 sys.exit(1)

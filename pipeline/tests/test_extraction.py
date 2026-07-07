@@ -821,6 +821,21 @@ class TestFullDatasetDispatch:
         mock_s1.assert_not_called()
         mock_big.assert_not_called()
 
+    def test_full_with_rues_dataset_calls_only_pull_rues_full(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        import pipeline.extract.pull as pull_mod
+
+        with (
+            patch.object(pull_mod, "pull_rues_full") as mock_rues,
+            patch.object(pull_mod, "pull_s1_full") as mock_s1,
+            patch.object(pull_mod, "pull_big_full") as mock_big,
+        ):
+            self._run_main(monkeypatch, ["--full", "--dataset", "e1_rues_santarosa"], tmp_path)
+        mock_rues.assert_called_once()
+        mock_s1.assert_not_called()
+        mock_big.assert_not_called()
+
     def test_full_without_dataset_calls_pull_big_full(
         self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
     ) -> None:
@@ -850,9 +865,9 @@ class TestFullDatasetDispatch:
     def test_full_with_unsupported_dataset_name_exits(
         self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
     ) -> None:
-        """--full --dataset only makes sense for the two big datasets, not the small ones."""
+        """--full --dataset only makes sense for BIG_DATASETS, not the genuinely small ones."""
         with pytest.raises(SystemExit) as exc_info:
-            self._run_main(monkeypatch, ["--full", "--dataset", "e1_rues_santarosa"], tmp_path)
+            self._run_main(monkeypatch, ["--full", "--dataset", "l4_siri"], tmp_path)
         assert exc_info.value.code == 1
 
 
