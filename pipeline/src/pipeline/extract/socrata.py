@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import fcntl
 import json
+import logging
 import os
 import tempfile
 import time
@@ -31,6 +32,7 @@ import pyarrow.csv as pa_csv
 import pyarrow.parquet as pq
 from dotenv import load_dotenv
 from tenacity import (
+    before_sleep_log,
     retry,
     retry_if_exception,
     stop_after_attempt,
@@ -38,6 +40,8 @@ from tenacity import (
 )
 
 load_dotenv()
+
+log = logging.getLogger(__name__)
 
 BASE_URL = "https://www.datos.gov.co"
 PAGE_SIZE = 50_000
@@ -70,8 +74,16 @@ def _retry_decorator(max_attempts: int = 5):
     return retry(
         retry=retry_if_exception(_is_retryable),
         stop=stop_after_attempt(max_attempts),
-        wait=wait_exponential(multiplier=1, min=2, max=60),
+        wait=wait_exponential(multiplier=1, min=2, max=30),
         reraise=True,
+        # Without this, tenacity retries completely silently -- observed
+        # live: a run that hit repeated transport errors on l4_siri/
+        # e1_rues_santarosa produced 2+ hours with no new log output at all,
+        # indistinguishable from a genuine hang, before GitHub's runner gave
+        # up with "lost communication with the server". Every retry now
+        # logs the exception and how long it's waiting before the next
+        # attempt.
+        before_sleep=before_sleep_log(log, logging.WARNING),
     )
 
 
@@ -83,7 +95,14 @@ def _retry_decorator(max_attempts: int = 5):
 class SocrataClient:
     """HTTP client for the Socrata SODA v2 API on datos.gov.co."""
 
-    def __init__(self, raw_dir: Path, timeout: float = 120.0) -> None:
+    def __init__(self, raw_dir: Path, timeout: float = 30.0) -> None:
+        # A 50k-row CSV page normally takes low single-digit seconds; 30s
+        # already covers a genuinely slow-but-working response. Lowered from
+        # 120s (worst case 5 attempts x 120s + backoff = ~10.5 min of total
+        # silence per stuck request, see _retry_decorator) so a truly stuck
+        # connection times out, retries, and (if persistent) gives up within
+        # a few minutes instead of an hour+ if it happens repeatedly across
+        # a long pull.
         self.raw_dir = raw_dir
         self._headers: dict[str, str] = {"Accept": "application/json"}
         token = os.getenv("SOCRATA_APP_TOKEN")

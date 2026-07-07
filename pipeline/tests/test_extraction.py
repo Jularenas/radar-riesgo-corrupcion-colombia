@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import csv
 import io
+import logging
 import os
 from pathlib import Path
 from typing import Any, Iterator
@@ -250,6 +251,47 @@ class TestManifest:
         assert len(loaded) == n_writers
         for i in range(n_writers):
             assert loaded[f"dataset_{i}"]["rows_pulled"] == 2 * 100 + i  # last round each writer completed
+
+
+class TestRetryLogging:
+    """
+    Regression coverage for a real incident: a transport-level error (e.g. a
+    dropped connection) retries completely silently by default -- a run that
+    hit this repeatedly produced 2+ hours with no new log output at all,
+    indistinguishable from a hang, before GitHub's runner gave up with "lost
+    communication with the server". Every retry attempt must now log a
+    warning (see socrata.py's before_sleep_log), and a transient failure
+    must actually succeed on retry rather than propagating immediately.
+    """
+
+    def test_transport_error_retries_and_logs_warning(
+        self, tmp_raw: Path, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        call_count = 0
+
+        class FlakyThenOkTransport(httpx.BaseTransport):
+            def handle_request(self, request: httpx.Request) -> httpx.Response:
+                nonlocal call_count
+                call_count += 1
+                if call_count == 1:
+                    raise httpx.RemoteProtocolError(
+                        "peer closed connection without sending complete message body"
+                    )
+                return httpx.Response(200, json=[{"count_1": "42"}])
+
+        client = SocrataClient(tmp_raw)
+        client._client = httpx.Client(
+            transport=FlakyThenOkTransport(), base_url="https://www.datos.gov.co", timeout=5
+        )
+        try:
+            with caplog.at_level(logging.WARNING):
+                result = client.count("test-1234")
+        finally:
+            client.close()
+
+        assert result == 42
+        assert call_count == 2  # failed once, succeeded on retry -- not swallowed, not a hard failure
+        assert "peer closed connection" in caplog.text  # the retry was logged, not silent
 
 
 class TestCsvParsing:
