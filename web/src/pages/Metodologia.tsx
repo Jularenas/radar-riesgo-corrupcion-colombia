@@ -87,7 +87,7 @@ export function MetodologiaPage() {
 
       <section>
         <h2 className="mb-3 text-lg font-semibold">Catálogo de banderas de riesgo</h2>
-        <div className="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-800">
+        <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-800">
           <table className="w-full text-sm">
             <thead className="bg-gray-50 dark:bg-gray-900">
               <tr className="text-left text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
