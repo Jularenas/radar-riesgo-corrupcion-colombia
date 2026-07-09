@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Radar de Riesgo de Corrupción · Colombia</title>
+    <script type="text/javascript">
+      // GitHub Pages has no server-side rewrite for client-side routes, so a
+      // direct/shared link (e.g. /radar-riesgo-corrupcion-colombia/casos/123
+      // opened fresh, with no prior in-app navigation) hits this 404 before
+      // React Router ever runs. Encode the intended path into a query string
+      // and redirect to index.html, which restores it via history.replaceState
+      // (see the matching script in index.html) before the app mounts.
+      // pathSegmentsToKeep=1 because this is a GH Pages *project* site
+      // (served under /radar-riesgo-corrupcion-colombia/, not domain root).
+      // Pattern: https://github.com/rafgraph/spa-github-pages
+      var pathSegmentsToKeep = 1;
+      var l = window.location;
+      l.replace(
+        l.protocol + "//" + l.hostname + (l.port ? ":" + l.port : "") +
+        l.pathname.split("/").slice(0, 1 + pathSegmentsToKeep).join("/") + "/?/" +
+        l.pathname.slice(1).split("/").slice(pathSegmentsToKeep).join("/").replace(/&/g, "~and~") +
+        (l.search ? "&" + l.search.slice(1).replace(/&/g, "~and~") : "") +
+        l.hash
+      );
+    </script>
+  </head>
+  <body></body>
+</html>

@@ -9,6 +9,26 @@
       content="Sistema de detección de riesgo de corrupción en contratación pública colombiana: casos priorizados, mapa de riesgo por departamento y metodología auditable."
     />
     <title>Radar de Riesgo de Corrupción · Colombia</title>
+    <script type="text/javascript">
+      // Restores the real path encoded by 404.html's redirect (see that
+      // file), before react-router-dom's BrowserRouter -- loaded via the
+      // module script below -- reads window.location on mount. Must run
+      // as a plain (non-module, non-deferred) script so it executes during
+      // parsing, ahead of the deferred module script at the bottom of body.
+      // Pattern: https://github.com/rafgraph/spa-github-pages
+      (function (l) {
+        if (l.search[1] === "/") {
+          var decoded = l.search
+            .slice(1)
+            .split("&")
+            .map(function (s) {
+              return s.replace(/~and~/g, "&");
+            })
+            .join("?");
+          window.history.replaceState(null, "", l.pathname.slice(0, -1) + decoded + l.hash);
+        }
+      })(window.location);
+    </script>
   </head>
   <body>
     <div id="root"></div>
