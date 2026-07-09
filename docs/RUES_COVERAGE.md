@@ -7,8 +7,8 @@ uv run python -m pipeline.clean.rues_coverage
 This file always reflects whatever `part-*.parquet` files are currently on disk for
 `e1_rues_ibague` / `e1_rues_santarosa` — it is a live measurement, not a one-time snapshot.
 
-**Generated:** 2026-07-05T22:47:54+00:00  
-**Mart:** `/Users/ext-julian.arenas/Documents/corruption/pipeline/data/marts/corruption.duckdb`
+**Generated:** 2026-07-08T23:45:19+00:00  
+**Mart:** `/Users/ext-julian.arenas/dev/corruption/pipeline/data/marts/corruption.duckdb`
 
 ## 1. Source completeness
 
@@ -25,16 +25,16 @@ of small suppliers matched:
 
 | Metric | Matched | Total | Match rate |
 |--------|--------:|------:|-----------:|
-| Distinct suppliers (simple %) | 119,609 | 1,184,898 | 10.1% |
-| Contract value (value-weighted %) | 555,661,177,077,301 COP | 995,697,638,386,825 COP | 55.8% |
+| Distinct suppliers (simple %) | 119,732 | 1,185,999 | 10.1% |
+| Contract value (value-weighted %) | 840,955,571,394,382 COP | 1,629,839,328,563,290 COP | 51.6% |
 
 ### 2.1 Breakdown by supplier type (dim_proveedor.es_persona_natural heuristic)
 
 | Tipo | Suppliers matched / total | Match rate (suppliers) | Value matched / total (COP) | Match rate (value) |
 |------|---------------------------:|------------------------:|------------------------------:|--------------------:|
-| Persona juridica | 61,298 / 101,260 | 60.5% | 535,714,179,457,755 / 822,356,601,602,321 | 65.1% |
-| Persona natural | 57,752 / 1,080,696 | 5.3% | 19,636,473,538,076 / 169,976,139,428,681 | 11.6% |
-| Desconocido (heuristica ambigua) | 559 / 2,942 | 19.0% | 310,524,081,470 / 3,364,897,355,823 | 9.2% |
+| Persona juridica | 61,381 / 101,400 | 60.5% | 804,205,222,439,480 / 1,319,534,059,850,831 | 60.9% |
+| Persona natural | 57,789 / 1,081,647 | 5.3% | 36,170,751,553,521 / 304,105,888,596,069 | 11.9% |
+| Desconocido (heuristica ambigua) | 562 / 2,952 | 19.0% | 579,597,401,381 / 6,199,380,116,390 | 9.3% |
 
 ## 3. Match quality notes
 

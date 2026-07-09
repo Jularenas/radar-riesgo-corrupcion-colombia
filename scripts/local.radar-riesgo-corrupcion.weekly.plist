@@ -9,18 +9,45 @@
 	     -> build -> publish to gh-pages) from the repo root. Absolute paths
 	     everywhere: launchd jobs get a minimal environment, not your shell's
 	     profile, so `make`/`uv`/`npm`/`git`/`gh` must all be reachable via
-	     PATH below or explicit paths -- there's no ~/.zshrc to source. -->
+	     PATH below or explicit paths -- there's no ~/.zshrc to source.
+
+	     Wrapped in `caffeinate -i -s`: confirmed live (2026-07-07) that
+	     without it, macOS idle-sleeping mid-run stalls the in-flight HTTPS
+	     connection for minutes at a time -- httpx's 30s read timeout can't
+	     save you if the whole process (network stack included) is suspended,
+	     not just slow. Repeated stalls on the S1/S2 refresh burned through
+	     the 5-attempt retry budget and failed the run about 85 minutes in,
+	     well before it reached marts/export/publish. `-i` blocks idle sleep
+	     regardless of power source; `-s` additionally blocks system sleep
+	     while on AC. Scoped to this one invocation via caffeinate's
+	     run-a-utility mode, so it stops holding the assertion the moment
+	     `make weekly` exits (success or failure) -- it doesn't keep the Mac
+	     awake in general. -->
 	<key>ProgramArguments</key>
 	<array>
+		<string>/usr/bin/caffeinate</string>
+		<string>-i</string>
+		<string>-s</string>
 		<string>/usr/bin/make</string>
 		<string>weekly</string>
 	</array>
-	<!-- TEMPLATE: replace /Users/YOUR_USERNAME/Documents/corruption below (both
+	<!-- TEMPLATE: replace /Users/YOUR_USERNAME/dev/corruption below (both
 	     WorkingDirectory and the two log paths) with your actual clone path
 	     before `cp`-ing this into ~/Library/LaunchAgents/ and `launchctl load`ing
-	     it -- see README's weekly-automation section. -->
+	     it -- see README's weekly-automation section.
+
+	     Do NOT put the clone under ~/Documents, ~/Desktop, ~/Downloads,
+	     ~/Pictures, ~/Movies, or ~/Music -- macOS's TCC (Transparency,
+	     Consent, and Control) protects those folders, and a launchd job
+	     (unlike an interactive Terminal session you've already granted
+	     access to) has no way to get a permission prompt. Confirmed live:
+	     with the repo under ~/Documents this failed immediately with
+	     "make: getcwd: Operation not permitted" / "No rule to make target".
+	     ~/dev (or anywhere else outside those TCC-protected folders) works
+	     without granting Full Disk Access to /usr/bin/make, which would
+	     affect every tool that ever invokes `make`, not just this job. -->
 	<key>WorkingDirectory</key>
-	<string>/Users/YOUR_USERNAME/Documents/corruption</string>
+	<string>/Users/YOUR_USERNAME/dev/corruption</string>
 	<key>EnvironmentVariables</key>
 	<dict>
 		<key>PATH</key>

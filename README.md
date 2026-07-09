@@ -146,6 +146,17 @@ próxima vez que coincida el horario con la máquina despierta. Para mayor confi
 un despertar automático un poco antes con
 `sudo pmset repeat wakeorpoweron MTWRFSU 08:55:00` (opcional).
 
+**Segundo problema relacionado, ya resuelto:** que la Mac esté despierta *al empezar* no basta
+-- también tiene que seguir despierta durante toda la corrida (~90 min). Confirmado en vivo
+(2026-07-07): el sueño por inactividad a mitad de una corrida deja la conexión HTTPS en curso
+colgada varios minutos; el timeout de 30s de httpx no ayuda porque todo el proceso (incluida la
+pila de red) está suspendido, no solo lento. Varios de estos cuelgues seguidos agotaron el
+presupuesto de reintentos (5 intentos) y la corrida falló ~85 minutos adentro, antes de llegar a
+`marts`/`export`/`publish`. Por eso el plist ya envuelve el job en `caffeinate -i -s` (ver
+`scripts/local.radar-riesgo-corrupcion.weekly.plist`): mantiene la máquina despierta solo
+mientras `make weekly` está corriendo, y suelta la asignación apenas termina (éxito o error) --
+no mantiene la Mac despierta en general.
+
 ## Estructura del repositorio
 
 ```
