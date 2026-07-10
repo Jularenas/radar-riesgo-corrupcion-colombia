@@ -2,9 +2,9 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "resumen_nacional.schema.json",
   "title": "resumen_nacional.json",
-  "description": "National KPIs, year x modalidad series, per-department choropleth aggregates.",
+  "description": "National KPIs, year x modalidad series, year x tier series, per-department choropleth aggregates.",
   "type": "object",
-  "required": ["generado_en", "kpis", "serie_anio_modalidad", "departamentos"],
+  "required": ["generado_en", "kpis", "serie_anio_modalidad", "serie_anio_tier", "departamentos"],
   "additionalProperties": false,
   "properties": {
     "generado_en": { "type": "string", "format": "date-time" },
@@ -37,6 +37,19 @@
           "modalidad": { "type": "string" },
           "n_contratos": { "type": "integer", "minimum": 0 },
           "valor_total": { "type": "number", "minimum": 0 }
+        }
+      }
+    },
+    "serie_anio_tier": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["anio", "tier", "n_contratos"],
+        "additionalProperties": false,
+        "properties": {
+          "anio": { "type": "integer" },
+          "tier": { "type": "string", "enum": ["bajo", "medio", "alto", "critico"] },
+          "n_contratos": { "type": "integer", "minimum": 0 }
         }
       }
     },

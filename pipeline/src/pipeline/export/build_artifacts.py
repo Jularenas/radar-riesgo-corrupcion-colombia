@@ -283,6 +283,15 @@ def build_resumen_nacional(con: duckdb.DuckDBPyConnection) -> dict:
         {"anio": anio, "modalidad": modalidad, "n_contratos": n, "valor_total": valor}
         for anio, modalidad, n, valor in modalidad_rows
     ]
+    tier_rows = con.execute("""
+        SELECT anio, tier, COUNT(*)
+        FROM contrato_score
+        WHERE anio IS NOT NULL AND tier IS NOT NULL
+        GROUP BY 1, 2
+        ORDER BY 1, 2
+    """).fetchall()
+    serie_anio_tier = [{"anio": anio, "tier": tier, "n_contratos": n} for anio, tier, n in tier_rows]
+
     n_directa = sum(r["n_contratos"] for r in serie_anio_modalidad if r["modalidad"] == "CONTRATACION_DIRECTA")
 
     pct_contratacion_directa = (100.0 * n_directa / contratos_analizados) if contratos_analizados else 0.0
@@ -344,6 +353,7 @@ def build_resumen_nacional(con: duckdb.DuckDBPyConnection) -> dict:
             "pct_geolocalizado": pct_geolocalizado,
         },
         "serie_anio_modalidad": serie_anio_modalidad,
+        "serie_anio_tier": serie_anio_tier,
         "departamentos": departamentos,
     }
 

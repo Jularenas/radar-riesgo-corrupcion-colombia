@@ -2,7 +2,16 @@ import { useEffect, useMemo, useState } from "react";
 import { ComposableMap, Geographies, Geography } from "react-simple-maps";
 import type { Feature, FeatureCollection, Geometry } from "geojson";
 import type { DepartamentoResumenRow, NivelRiesgo } from "@/types/artifacts";
-import { SIN_DATOS_HEX, TIER_LABELS, TIER_ORDER, TIER_SOLID_CLASSES, tierForScore, tierHex } from "@/lib/tier";
+import {
+  SIN_DATOS_HEX,
+  TIER_HEX,
+  TIER_LABELS,
+  TIER_ORDER,
+  TIER_SOLID_CLASSES,
+  colorForPercentile,
+  tierForScore,
+  tierHex,
+} from "@/lib/tier";
 import { formatInt, formatScore } from "@/lib/format";
 import { LoadingState, ErrorState } from "@/components/StateViews";
 
@@ -32,6 +41,14 @@ const HEIGHT = 620;
 const PROJECTION_CENTER: [number, number] = [-72.93, 4.11];
 const PROJECTION_SCALE = 1700;
 
+type ModoColor = "relativo" | "absoluto";
+
+interface RankInfo {
+  percentile: number;
+  puesto: number;
+  total: number;
+}
+
 /**
  * Colombia department choropleth. Source: DANE's Marco Geoestadístico
  * Nacional 2018 (official government geographic boundaries), reformatted to
@@ -45,6 +62,7 @@ export function ColombiaMap({ departamentos, niveles, onSelect }: ColombiaMapPro
   const [fc, setFc] = useState<DptoFeatureCollection | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [hovered, setHovered] = useState<{ cod: string; x: number; y: number } | null>(null);
+  const [modo, setModo] = useState<ModoColor>("relativo");
 
   useEffect(() => {
     let cancelled = false;
@@ -70,7 +88,26 @@ export function ColombiaMap({ departamentos, niveles, onSelect }: ColombiaMapPro
     return m;
   }, [departamentos]);
 
+  // Relative ranking: score_promedio uses the same bajo/medio/alto/critico
+  // thresholds as individual contracts, but a department-level AVERAGE
+  // regresses toward the low end of that scale (most contracts aren't
+  // critical, so the mean dilutes down) -- which washes out real variation
+  // between departments. Ranking by percentile instead makes the highest-risk
+  // departments visibly redder relative to their peers, even when none of
+  // them individually cross the absolute "critico" threshold.
+  const ranking = useMemo(() => {
+    const conDatos = departamentos.filter((d) => d.n_contratos > 0 && d.score_promedio !== null);
+    const ordenados = [...conDatos].sort((a, b) => (a.score_promedio as number) - (b.score_promedio as number));
+    const total = ordenados.length;
+    const m = new Map<string, RankInfo>();
+    ordenados.forEach((d, i) => {
+      m.set(d.cod_dpto, { percentile: total > 1 ? i / (total - 1) : 0.5, puesto: total - i, total });
+    });
+    return m;
+  }, [departamentos]);
+
   const hoveredRow = hovered ? byCod.get(hovered.cod) : undefined;
+  const hoveredRank = hovered ? ranking.get(hovered.cod) : undefined;
 
   if (error) {
     return <ErrorState message={error} />;
@@ -81,6 +118,41 @@ export function ColombiaMap({ departamentos, niveles, onSelect }: ColombiaMapPro
 
   return (
     <div className="relative">
+      <div className="mb-3 flex flex-wrap items-center gap-2">
+        <div className="inline-flex rounded-md border border-gray-200 p-0.5 text-xs dark:border-gray-700" role="group" aria-label="Modo de color del mapa">
+          <button
+            type="button"
+            onClick={() => setModo("relativo")}
+            className={`rounded px-2.5 py-1 font-medium transition-colors ${
+              modo === "relativo"
+                ? "bg-gray-900 text-white dark:bg-gray-100 dark:text-gray-900"
+                : "text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
+            }`}
+            aria-pressed={modo === "relativo"}
+          >
+            Comparado entre departamentos
+          </button>
+          <button
+            type="button"
+            onClick={() => setModo("absoluto")}
+            className={`rounded px-2.5 py-1 font-medium transition-colors ${
+              modo === "absoluto"
+                ? "bg-gray-900 text-white dark:bg-gray-100 dark:text-gray-900"
+                : "text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
+            }`}
+            aria-pressed={modo === "absoluto"}
+          >
+            Escala absoluta
+          </button>
+        </div>
+      </div>
+      {modo === "relativo" && (
+        <p className="mb-3 text-xs text-gray-500 dark:text-gray-400">
+          Colorea cada departamento según su posición frente a los demás, no contra los umbrales fijos de riesgo —
+          útil porque el promedio por departamento rara vez llega a "crítico" en la escala absoluta. El más rojo es
+          el más alto <em>relativo a esta muestra</em>, no necesariamente un caso crítico en términos absolutos.
+        </p>
+      )}
       <ComposableMap
         projection="geoMercator"
         projectionConfig={{ center: PROJECTION_CENTER, scale: PROJECTION_SCALE }}
@@ -88,16 +160,24 @@ export function ColombiaMap({ departamentos, niveles, onSelect }: ColombiaMapPro
         height={HEIGHT}
         style={{ width: "100%", height: "auto" }}
         role="img"
-        aria-label="Mapa de Colombia coloreado por score de riesgo promedio de cada departamento"
+        aria-label={
+          modo === "relativo"
+            ? "Mapa de Colombia coloreado por posición relativa de riesgo de cada departamento frente a los demás"
+            : "Mapa de Colombia coloreado por score de riesgo promedio de cada departamento"
+        }
       >
         <Geographies geography={fc}>
           {({ geographies }: { geographies: DptoFeature[] }) =>
             geographies.map((g) => {
               const cod = g.properties.cod_dpto;
               const row = byCod.get(cod);
-              const hasData = !!row && row.n_contratos > 0;
+              const hasData = !!row && row.n_contratos > 0 && row.score_promedio !== null;
               const tier = hasData ? tierForScore(row.score_promedio, niveles) : null;
-              const fill = hasData ? tierHex(tier) : SIN_DATOS_HEX;
+              const fill = !hasData
+                ? SIN_DATOS_HEX
+                : modo === "absoluto"
+                  ? tierHex(tier)
+                  : colorForPercentile(ranking.get(cod)?.percentile ?? 0.5);
               return (
                 <Geography
                   key={cod}
@@ -126,10 +206,15 @@ export function ColombiaMap({ departamentos, niveles, onSelect }: ColombiaMapPro
           style={{ left: hovered.x + 14, top: hovered.y + 14 }}
         >
           <p className="font-semibold text-gray-900 dark:text-gray-100">{hoveredRow?.dpto ?? hovered.cod}</p>
-          {hoveredRow && hoveredRow.n_contratos > 0 ? (
+          {hoveredRow && hoveredRow.n_contratos > 0 && hoveredRow.score_promedio !== null ? (
             <>
               <p className="text-gray-600 dark:text-gray-400">{formatInt(hoveredRow.n_contratos)} contratos</p>
               <p className="text-gray-600 dark:text-gray-400">Score promedio: {formatScore(hoveredRow.score_promedio)}</p>
+              {modo === "relativo" && hoveredRank && (
+                <p className="text-gray-600 dark:text-gray-400">
+                  Puesto {hoveredRank.puesto} de {hoveredRank.total} (percentil {Math.round(hoveredRank.percentile * 100)})
+                </p>
+              )}
             </>
           ) : (
             <p className="text-gray-500 dark:text-gray-500">Sin contratos en la muestra</p>
@@ -138,19 +223,36 @@ export function ColombiaMap({ departamentos, niveles, onSelect }: ColombiaMapPro
         </div>
       )}
 
-      <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-600 dark:text-gray-400">
-        <span className="font-medium text-gray-500 dark:text-gray-400">Score promedio:</span>
-        {TIER_ORDER.map((t) => (
-          <span key={t} className="flex items-center gap-1.5">
-            <span className={`h-3 w-3 rounded-sm ${TIER_SOLID_CLASSES[t]}`} />
-            {TIER_LABELS[t]}
+      {modo === "absoluto" ? (
+        <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-600 dark:text-gray-400">
+          <span className="font-medium text-gray-500 dark:text-gray-400">Score promedio:</span>
+          {TIER_ORDER.map((t) => (
+            <span key={t} className="flex items-center gap-1.5">
+              <span className={`h-3 w-3 rounded-sm ${TIER_SOLID_CLASSES[t]}`} />
+              {TIER_LABELS[t]}
+            </span>
+          ))}
+          <span className="flex items-center gap-1.5">
+            <span className="h-3 w-3 rounded-sm border border-gray-400" style={{ backgroundColor: SIN_DATOS_HEX }} />
+            Sin datos
           </span>
-        ))}
-        <span className="flex items-center gap-1.5">
-          <span className="h-3 w-3 rounded-sm border border-gray-400" style={{ backgroundColor: SIN_DATOS_HEX }} />
-          Sin datos
-        </span>
-      </div>
+        </div>
+      ) : (
+        <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-600 dark:text-gray-400">
+          <span className="font-medium text-gray-500 dark:text-gray-400">Riesgo relativo:</span>
+          <span className="text-gray-500 dark:text-gray-400">Más bajo</span>
+          <span
+            className="h-3 w-32 rounded-sm"
+            style={{ background: `linear-gradient(to right, ${TIER_HEX.bajo}, ${TIER_HEX.medio}, ${TIER_HEX.alto}, ${TIER_HEX.critico})` }}
+            aria-hidden
+          />
+          <span className="text-gray-500 dark:text-gray-400">Más alto</span>
+          <span className="flex items-center gap-1.5">
+            <span className="h-3 w-3 rounded-sm border border-gray-400" style={{ backgroundColor: SIN_DATOS_HEX }} />
+            Sin datos
+          </span>
+        </div>
+      )}
     </div>
   );
 }

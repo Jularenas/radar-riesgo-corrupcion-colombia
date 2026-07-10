@@ -104,6 +104,12 @@ export interface SerieAnioModalidad {
   valor_total: number;
 }
 
+export interface SerieAnioTier {
+  anio: number;
+  tier: Tier;
+  n_contratos: number;
+}
+
 export interface DepartamentoResumenRow {
   cod_dpto: string;
   dpto: string | null;
@@ -120,6 +126,7 @@ export interface ResumenNacional {
   generado_en: string;
   kpis: KpisNacionales;
   serie_anio_modalidad: SerieAnioModalidad[];
+  serie_anio_tier: SerieAnioTier[];
   departamentos: DepartamentoResumenRow[];
 }
 

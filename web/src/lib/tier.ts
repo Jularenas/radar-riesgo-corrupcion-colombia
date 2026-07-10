@@ -68,3 +68,40 @@ export function tierForScore(score: number | null | undefined, niveles: NivelRie
   }
   return null;
 }
+
+// ---------------------------------------------------------------------------
+// Relative (percentile-based) color scale -- for comparing entities against
+// each other (e.g. departments on the map) rather than against the fixed
+// bajo/medio/alto/critico score thresholds above. A department-level average
+// score regresses toward the low end of that absolute scale (most individual
+// contracts aren't critical, so the mean dilutes down), which washes out real
+// variation *between* departments. This reuses the exact same 4-color palette
+// as TIER_HEX, just interpolated continuously by rank instead of bucketed by
+// absolute value, so "redder" always means "higher relative to its peers".
+// ---------------------------------------------------------------------------
+
+const GRADIENT_STOPS: readonly string[] = [TIER_HEX.bajo, TIER_HEX.medio, TIER_HEX.alto, TIER_HEX.critico];
+
+function hexToRgb(hex: string): [number, number, number] {
+  const n = parseInt(hex.slice(1), 16);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+
+function rgbToHex([r, g, b]: [number, number, number]): string {
+  return `#${[r, g, b].map((v) => Math.round(v).toString(16).padStart(2, "0")).join("")}`;
+}
+
+function lerpColor(c1: string, c2: string, t: number): string {
+  const a = hexToRgb(c1);
+  const b = hexToRgb(c2);
+  return rgbToHex([a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t]);
+}
+
+/** Maps a percentile rank (0..1) to a color continuously interpolated across GRADIENT_STOPS. */
+export function colorForPercentile(p: number): string {
+  const clamped = Math.max(0, Math.min(1, p));
+  const segments = GRADIENT_STOPS.length - 1;
+  const scaled = clamped * segments;
+  const idx = Math.min(Math.floor(scaled), segments - 1);
+  return lerpColor(GRADIENT_STOPS[idx], GRADIENT_STOPS[idx + 1], scaled - idx);
+}

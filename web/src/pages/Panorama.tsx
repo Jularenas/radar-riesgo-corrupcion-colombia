@@ -5,7 +5,7 @@ import { AlertTriangle, Building2, FileText, Landmark, MapPin, Wallet } from "lu
 import { getMeta, getResumenNacional } from "@/lib/data";
 import { useAsyncData } from "@/lib/hooks";
 import { formatCOP, formatInt, formatPercent } from "@/lib/format";
-import { TIER_HEX } from "@/lib/tier";
+import { TIER_HEX, TIER_LABELS } from "@/lib/tier";
 import { KpiCard } from "@/components/KpiCard";
 import { LoadingState, ErrorState } from "@/components/StateViews";
 import { ColombiaMap } from "@/components/ColombiaMap";
@@ -49,6 +49,14 @@ export function PanoramaPage() {
   const modalidadesPresentes = useMemo(() => {
     if (!resumen.data) return [];
     return [...new Set(resumen.data.serie_anio_modalidad.map((r) => r.modalidad))];
+  }, [resumen.data]);
+
+  const casosCriticosByYear = useMemo(() => {
+    if (!resumen.data) return [];
+    return resumen.data.serie_anio_tier
+      .filter((r) => r.tier === "critico")
+      .map((r) => ({ anio: r.anio, critico: r.n_contratos }))
+      .sort((a, b) => a.anio - b.anio);
   }, [resumen.data]);
 
   if (resumen.loading || meta.loading) return <LoadingState label="Cargando panorama nacional…" />;
@@ -122,6 +130,29 @@ export function PanoramaPage() {
                 {modalidadesPresentes.map((mod) => (
                   <Bar key={mod} dataKey={mod} stackId="modalidad" fill={MODALIDAD_COLORS[mod] ?? "#9ca3af"} />
                 ))}
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </section>
+      )}
+
+      {casosCriticosByYear.length > 0 && (
+        <section className="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900 sm:p-6">
+          <h2 className="text-lg font-semibold">Casos críticos por año</h2>
+          <p className="mb-4 mt-1 text-sm text-gray-500 dark:text-gray-400">
+            Contratos con score de riesgo ≥ 60 firmados cada año. Se grafican solo estos -- apilarlos junto a
+            bajo/medio/alto los deja invisibles: son{" "}
+            {formatPercent((100 * (resumen.data?.kpis.casos_criticos ?? 0)) / (resumen.data?.kpis.contratos_analizados || 1), 3)} del
+            total de contratos.
+          </p>
+          <div className="h-80 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={casosCriticosByYear}>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-gray-200 dark:stroke-gray-800" />
+                <XAxis dataKey="anio" tick={{ fontSize: 12 }} />
+                <YAxis tick={{ fontSize: 12 }} tickFormatter={(v: number) => formatInt(v)} allowDecimals={false} />
+                <Tooltip formatter={(value) => [formatInt(Number(value)), TIER_LABELS.critico]} labelFormatter={(label) => `Año ${label}`} />
+                <Bar dataKey="critico" fill={TIER_HEX.critico} name={TIER_LABELS.critico} />
               </BarChart>
             </ResponsiveContainer>
           </div>
